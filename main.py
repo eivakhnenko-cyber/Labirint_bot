@@ -6,7 +6,7 @@ from telegram import ReplyKeyboardRemove, BotCommandScopeChat
 # Импортируем настройку команд
 from bot_comands import set_default_commands, set_user_commands  # Добавьте эту строку
 
-from bot_config import TOKEN
+from bot_config import TELEGRAM_BOT_TOKEN as TOKEN
 from database import init_db
 from handlers.start import start, check_and_show_logo
 
@@ -270,8 +270,9 @@ def main():
         'stop_watch': report_manager.close_report,
         'report_history': report_manager.show_report_history,
     }
-    
+        
     # Создаем обработчик сообщений
+
     message_handler = create_message_handler(handlers_registry)
     
     application.add_handler(edit_user_conversation_handler)
