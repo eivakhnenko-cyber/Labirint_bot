@@ -264,9 +264,11 @@ async def report_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def loyalty_program_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Меню программы лояльности"""
+    user_id = update.effective_user.id
+
     await update.message.reply_text(
         "🎁 *Программа лояльности*\n\nВыберите действие:",
-        reply_markup=await get_main_keyboard(),
+        reply_markup=await get_loyalty_program_keyboard(),
         parse_mode='Markdown'
     )
 

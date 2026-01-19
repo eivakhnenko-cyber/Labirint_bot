@@ -305,7 +305,7 @@ async def list_levels_handler(update: Update, context: CallbackContext) -> None:
         return
     
     # Получаем все уровни
-    levels = bonus_levels_manager.get_bonus_levels()
+    levels = bonus_levels_manager.get_bonus_levels(user_id)
     
     if not levels:
         await update.message.reply_text(
