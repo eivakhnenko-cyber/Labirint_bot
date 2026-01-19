@@ -639,7 +639,7 @@ async def make_admin(update: Update, context: CallbackContext) -> None:
         user_id = update.effective_user.id
         
         # Получаем всех пользователей
-        users = await role_manager.get_all_users()
+        users = await users_manager.get_all_users()
         
         if not users:
             # Первый пользователь становится администратором
