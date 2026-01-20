@@ -13,9 +13,11 @@ logger = logging.getLogger(__name__)
 
 class BonusDataManager:
     """Менеджер данных бонусной системы"""
-    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__) 
+
     @staticmethod
-    def get_customer_bonus_data(user_id: int) -> Optional[Dict[str, Any]]:
+    def get_customer_bonus_data(self, user_id: int) -> Optional[Dict[str, Any]]:
         """Получение данных клиента для бонусной системы"""
         try:
             with sqlite_connection() as conn:
@@ -53,11 +55,11 @@ class BonusDataManager:
                 return dict(result) if result else None
                 
         except Exception as e:
-            logger.error(f"Ошибка получения данных клиента: {e}")
+            self.logger.error(f"Ошибка получения данных клиента: {e}")
             return None
     
     @staticmethod
-    def check_program_name_exists(program_name: str) -> bool:
+    def check_program_name_exists(self, program_name: str) -> bool:
         """Проверка существования программы с таким названием"""
         try:
             with sqlite_connection() as conn:
@@ -68,11 +70,11 @@ class BonusDataManager:
                 )
                 return cursor.fetchone() is not None
         except Exception as e:
-            logger.error(f"Ошибка проверки названия программы: {e}")
+            self.logger.error(f"Ошибка проверки названия программы: {e}")
             return False
     
     @staticmethod
-    def save_bonus_program(program_data: Dict[str, Any], created_by: int) -> Optional[int]:
+    def save_bonus_program(self, program_data: Dict[str, Any], created_by: int) -> Optional[int]:
         """Сохранение бонусной программы в БД"""
         try:
             with sqlite_connection() as conn:
@@ -111,11 +113,11 @@ class BonusDataManager:
                 return program_id
                 
         except Exception as e:
-            logger.error(f"Ошибка сохранения бонусной программы: {e}")
+            self.logger.error(f"Ошибка сохранения бонусной программы: {e}")
             return None
     
     @staticmethod
-    def get_all_bonus_programs() -> List[Dict[str, Any]]:
+    def get_all_bonus_programs(self) -> List[Dict[str, Any]]:
         """Получение списка всех бонусных программ"""
         try:
             with sqlite_connection() as conn:
@@ -131,11 +133,11 @@ class BonusDataManager:
                 return [dict(program) for program in programs]
                 
         except Exception as e:
-            logger.error(f"Ошибка получения списка программ: {e}")
+            self.logger.error(f"Ошибка получения списка программ: {e}")
             return []
     
     @staticmethod
-    def get_active_bonus_programs() -> List[Dict[str, Any]]:
+    def get_active_bonus_programs(self) -> List[Dict[str, Any]]:
         """Получение списка активных бонусных программ"""
         try:
             with sqlite_connection() as conn:
@@ -151,11 +153,11 @@ class BonusDataManager:
                 return [dict(program) for program in programs]
                 
         except Exception as e:
-            logger.error(f"Ошибка получения активных программ: {e}")
+            self.logger.error(f"Ошибка получения активных программ: {e}")
             return []
     
     @staticmethod
-    def assign_program_to_all_customers(program_id: int) -> bool:
+    def assign_program_to_all_customers(self, program_id: int) -> bool:
         """Назначение бонусной программы всем клиентам"""
         try:
             with sqlite_connection() as conn:
@@ -172,7 +174,7 @@ class BonusDataManager:
                 return cursor.rowcount > 0
                 
         except Exception as e:
-            logger.error(f"Ошибка назначения программы клиентам: {e}")
+            self.logger.error(f"Ошибка назначения программы клиентам: {e}")
             return False
 
 # Создаем экземпляр менеджера для использования
