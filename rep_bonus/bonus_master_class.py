@@ -16,7 +16,6 @@ class BonusDataManager:
     def __init__(self):
         self.logger = logging.getLogger(__name__) 
 
-    @staticmethod
     def get_customer_bonus_data(self, user_id: int) -> Optional[Dict[str, Any]]:
         """Получение данных клиента для бонусной системы"""
         try:
@@ -58,7 +57,6 @@ class BonusDataManager:
             self.logger.error(f"Ошибка получения данных клиента: {e}")
             return None
     
-    @staticmethod
     def check_program_name_exists(self, program_name: str) -> bool:
         """Проверка существования программы с таким названием"""
         try:
@@ -73,7 +71,6 @@ class BonusDataManager:
             self.logger.error(f"Ошибка проверки названия программы: {e}")
             return False
     
-    @staticmethod
     def save_bonus_program(self, program_data: Dict[str, Any], created_by: int) -> Optional[int]:
         """Сохранение бонусной программы в БД"""
         try:
@@ -116,7 +113,6 @@ class BonusDataManager:
             self.logger.error(f"Ошибка сохранения бонусной программы: {e}")
             return None
     
-    @staticmethod
     def get_all_bonus_programs(self) -> List[Dict[str, Any]]:
         """Получение списка всех бонусных программ"""
         try:
@@ -136,7 +132,6 @@ class BonusDataManager:
             self.logger.error(f"Ошибка получения списка программ: {e}")
             return []
     
-    @staticmethod
     def get_active_bonus_programs(self) -> List[Dict[str, Any]]:
         """Получение списка активных бонусных программ"""
         try:
@@ -156,7 +151,6 @@ class BonusDataManager:
             self.logger.error(f"Ошибка получения активных программ: {e}")
             return []
     
-    @staticmethod
     def assign_program_to_all_customers(self, program_id: int) -> bool:
         """Назначение бонусной программы всем клиентам"""
         try:
