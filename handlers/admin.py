@@ -494,7 +494,7 @@ async def system_stats(update: Update, context: CallbackContext) -> None:
             )
             return
         
-        users = await role_manager.get_all_users()
+        users = await users_manager.get_all_users()
         
         # Считаем статистику по ролям
         role_stats = {}
@@ -523,7 +523,7 @@ async def system_stats(update: Update, context: CallbackContext) -> None:
         
         # Считаем пользователей без посетителей
         try:
-            non_visitors = await role_manager.get_users_without_visitors()
+            non_visitors = await users_manager.get_users_without_visitors()
             message += f"• Активных пользователей (без посетителей): {len(non_visitors)}\n"
         except:
             pass
@@ -546,7 +546,7 @@ async def system_stats(update: Update, context: CallbackContext) -> None:
         logger.error(f"Ошибка в system_stats: {e}")
         await update.message.reply_text(
             "❌ Ошибка загрузки статистики.",
-            reply_markup=await get_admin_keyboard()
+            reply_markup=await get_main_keyboard(user_id)
         )
 
 async def system_settings(update: Update, context: CallbackContext) -> None:
