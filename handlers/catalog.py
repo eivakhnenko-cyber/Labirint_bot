@@ -7,6 +7,7 @@ from handlers.admin_roles_class import role_manager, Permission, UserRole
 from keyboards.global_keyb import get_cancel_keyboard, get_main_keyboard
 from keyboards.invent_keyb import get_catalog_keyboard, get_categories_keyboard, get_inventory_keyboard
 from handlers.catalog_cervices_class import CatalogRepository
+from utils.telegram_utils import send_or_edit_message
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +30,16 @@ async def manage_catalog(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     
     if not await role_manager.has_permission(user_id, Permission.MANAGE_INVENTORY):
-        await update.message.reply_text(
-            "❌ У вас нет прав для управления справочником товаров.",
+        await send_or_edit_message(
+            update=update,
+            text="❌ У вас нет прав для управления справочником товаров.",
             reply_markup=await get_main_keyboard(user_id)
         )
         return
     
-    await update.message.reply_text(
-        "📋 *Управление справочником товаров*\n\n"
-        "Выберите действие:",
+    await send_or_edit_message(
+        update=update,
+        text="📋 *Управление справочником товаров*\n\nВыберите действие:",
         reply_markup=await get_catalog_keyboard(user_id),
         parse_mode='Markdown'
     )
@@ -47,8 +49,9 @@ async def add_to_catalog(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     
     if not await role_manager.has_permission(user_id, Permission.MANAGE_INVENTORY):
-        await update.message.reply_text(
-            "❌ У вас нет прав для добавления товаров в справочник.",
+        await send_or_edit_message(
+            update=update,
+            text="❌ У вас нет прав для добавления товаров в справочник.",
             reply_markup=await get_main_keyboard(user_id)
         )
         return
@@ -65,11 +68,12 @@ async def add_to_catalog(update: Update, context: CallbackContext) -> None:
     if categories:
         categories_text = "\n\n📁 *Существующие категории:*\n" + "\n".join([f"• {cat}" for cat in categories])
     
-    await update.message.reply_text(
-        f"➕ *Добавление товара в справочник*\n\n"
-        f"Введите категорию товара (например: 'Напитки', 'Выпечка', 'Десерты'):{categories_text}",
+    await send_or_edit_message(
+        update=update,
+        text=f"➕ *Добавление товара в справочник*\n\nВведите категорию товара (например: 'Напитки', 'Выпечка', 'Десерты'):{categories_text}",
         reply_markup=get_cancel_keyboard(),
-        parse_mode='Markdown'
+        parse_mode='Markdown',
+        delete_previous=True  # Важно! Удаляем inline-сообщение перед отправкой обычного
     )
 
 async def del_item_catalog(update: Update, context: CallbackContext) -> None:
@@ -77,8 +81,9 @@ async def del_item_catalog(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     
     if not await role_manager.has_permission(user_id, Permission.MANAGE_INVENTORY):
-        await update.message.reply_text(
-            "❌ У вас нет прав для удаления товаров из справочника.",
+        await send_or_edit_message(
+            update=update,
+            text="❌ У вас нет прав для удаления товаров из справочника.",
             reply_markup=await get_main_keyboard(user_id)
         )
         return
@@ -87,8 +92,9 @@ async def del_item_catalog(update: Update, context: CallbackContext) -> None:
     categories = CatalogRepository.get_active_categories()
     
     if not categories:
-        await update.message.reply_text(
-            "📭 Справочник товаров пуст. Нечего удалять.",
+        await send_or_edit_message(
+            update=update,
+            text="📭 Справочник товаров пуст. Нечего удалять.",
             reply_markup=await get_catalog_keyboard(user_id)
         )
         return
@@ -106,11 +112,13 @@ async def del_item_catalog(update: Update, context: CallbackContext) -> None:
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text(
-        "🗑️ *Удаление товара из справочника*\n\n"
-        "*Выберите категорию товара для удаления:*",
+    await send_or_edit_message(
+        update=update,
+        text=(f"🗑️ *Удаление товара из справочника*\n\n",
+        "*Выберите категорию товара для удаления:*"),
         reply_markup=reply_markup,
-        parse_mode='Markdown'
+        parse_mode='Markdown',
+        delete_previous=True  # Важно! Удаляем inline-сообщение перед отправкой обычного
     )
 
 async def process_catalog_deletion(update: Update, context: CallbackContext) -> None:
@@ -126,8 +134,9 @@ async def process_catalog_deletion(update: Update, context: CallbackContext) -> 
     
     if text == Buttons.CANCEL:
         del context.user_data['deleting_from_catalog']
-        await update.message.reply_text(
-            "❌ Удаление отменено.",
+        await send_or_edit_message(
+            update=update,
+            text="❌ Удаление отменено.",
             reply_markup=await get_catalog_keyboard(user_id)
         )
         return
@@ -139,9 +148,10 @@ async def process_catalog_deletion(update: Update, context: CallbackContext) -> 
             return
         
         if not CatalogRepository.check_category_exists(text):
-            await update.message.reply_text(
-                f"❌ В категории '{text}' нет активных товаров.\n"
-                f"Введите другую категорию:",
+            await send_or_edit_message(
+                update=update,
+                text=(f"❌ В категории '{text}' нет активных товаров.\n"
+                f"Введите другую категорию:"),
                 reply_markup=get_cancel_keyboard()
             )
             return
@@ -152,8 +162,9 @@ async def process_catalog_deletion(update: Update, context: CallbackContext) -> 
         products = CatalogRepository.get_category_products(text)
         
         if not products:
-            await update.message.reply_text(
-                f"❌ В категории '{text}' нет товаров для удаления.",
+            await send_or_edit_message(
+                update=update,
+                text=f"❌ В категории '{text}' нет товаров для удаления.",
                 reply_markup=await get_catalog_keyboard(user_id)
             )
             del context.user_data['deleting_from_catalog']
@@ -202,8 +213,9 @@ async def process_catalog_deletion(update: Update, context: CallbackContext) -> 
             await delete_single_product(update, context, process['data'])
         else:
             del context.user_data['deleting_from_catalog']
-            await update.message.reply_text(
-                "❌ Удаление отменено.",
+            await send_or_edit_message(
+                update=update,
+                text="❌ Удаление отменено.",
                 reply_markup=await get_catalog_keyboard(user_id)
             )
     
@@ -212,8 +224,9 @@ async def process_catalog_deletion(update: Update, context: CallbackContext) -> 
             await delete_all_category_products(update, context, process['data'])
         else:
             del context.user_data['deleting_from_catalog']
-            await update.message.reply_text(
-                "❌ Удаление отменено.",
+            await send_or_edit_message(
+                update=update,
+                text="❌ Удаление отменено.",
                 reply_markup=await get_catalog_keyboard(user_id)
             )
 
@@ -424,8 +437,9 @@ async def save_to_catalog(update: Update, context: CallbackContext, product_data
             parse_mode='Markdown'
         )
     else:
-        await update.message.reply_text(
-            "❌ Ошибка при добавлении товара в справочник.",
+        await send_or_edit_message(
+            update=update,
+            text="❌ Ошибка при добавлении товара в справочник.",
             reply_markup=await get_catalog_keyboard(user_id)
         )
 
@@ -434,11 +448,9 @@ async def browse_catalog(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     
     if not await role_manager.has_permission(user_id, Permission.VIEW_INVENTORY):
-        if update.callback_query:
-            await update.callback_query.answer("❌ У вас нет прав для просмотра справочника товаров.")
-            return
-        await update.message.reply_text(
-            "❌ У вас нет прав для просмотра справочника товаров.",
+        await send_or_edit_message(
+            update=update,
+            text="❌ У вас нет прав для просмотра справочника товаров.",
             reply_markup=await get_main_keyboard(user_id)
         )
         return
@@ -448,17 +460,9 @@ async def browse_catalog(update: Update, context: CallbackContext) -> None:
     
     if not categories:
         # Обработка для callback
-        if update.callback_query:
-            await update.callback_query.edit_message_text(
-                "📭 Справочник товаров пуст.\n"
-                "Добавьте товары через меню управления справочником.",
-                reply_markup=await get_catalog_keyboard(user_id)
-            )
-            return
-        
-        await update.message.reply_text(
-            "📭 Справочник товаров пуст.\n"
-            "Добавьте товары через меню управления справочником.",
+        await send_or_edit_message(
+            update=update,
+            text="📭 Справочник товаров пуст.\nДобавьте товары через меню управления справочником.",
             reply_markup=await get_catalog_keyboard(user_id)
         )
         return
@@ -481,20 +485,12 @@ async def browse_catalog(update: Update, context: CallbackContext) -> None:
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     # Определяем способ отправки сообщения
-    if update.callback_query:
-        await update.callback_query.edit_message_text(
-            "📋 *Справочник товаров*\n\n"
-            "*Выберите категорию:*",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    else:
-        await update.message.reply_text(
-            "📋 *Справочник товаров*\n\n"
-            "*Выберите категорию:*",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
+    await send_or_edit_message(
+        update=update,
+        text="📋 *Справочник товаров*\n\n*Выберите категорию:*",
+        reply_markup=reply_markup,
+        parse_mode='Markdown'
+    )
 
 async def show_products_by_category(update: Update, context: CallbackContext, category: str = None) -> None:
     """Показать товары выбранной категории с inline-кнопками"""
@@ -652,8 +648,9 @@ async def edit_catalog_item(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     
     if not await role_manager.has_permission(user_id, Permission.MANAGE_INVENTORY):
-        await update.message.reply_text(
-            "❌ У вас нет прав для редактирования товаров в справочнике.",
+        await send_or_edit_message(
+            update=update,
+            text="❌ У вас нет прав для редактирования товаров в справочнике.",
             reply_markup=await get_main_keyboard(user_id)
         )
         return
@@ -663,11 +660,13 @@ async def edit_catalog_item(update: Update, context: CallbackContext) -> None:
         'data': {}
     }
     
-    await update.message.reply_text(
-        "✏️ *Редактирование товара в справочнике*\n\n"
-        "Введите название товара или ID для поиска:",
+    await send_or_edit_message(
+        update=update,
+        text=(f"✏️ *Редактирование товара в справочнике*\n\n"
+        "Введите название товара или ID для поиска:"),
         reply_markup=get_cancel_keyboard(),
-        parse_mode='Markdown'
+        parse_mode='Markdown',
+        delete_previous=True
     )
 
 async def edit_catalog_category(update: Update, context: CallbackContext) -> None:
@@ -675,8 +674,9 @@ async def edit_catalog_category(update: Update, context: CallbackContext) -> Non
     user_id = update.effective_user.id
     
     if not await role_manager.has_permission(user_id, Permission.MANAGE_INVENTORY):
-        await update.message.reply_text(
-            "❌ У вас нет прав для изменения категорий товаров.",
+        await send_or_edit_message(
+            update=update,
+            text="❌ У вас нет прав для изменения категорий товаров.",
             reply_markup=await get_main_keyboard(user_id)
         )
         return
@@ -684,8 +684,9 @@ async def edit_catalog_category(update: Update, context: CallbackContext) -> Non
     categories = CatalogRepository.get_active_categories()
     
     if not categories:
-        await update.message.reply_text(
-            "📭 В справочнике нет активных категорий.",
+        await send_or_edit_message(
+            update=update,
+            text="📭 В справочнике нет активных категорий.",
             reply_markup=await get_catalog_keyboard(user_id)
         )
         return
@@ -708,11 +709,13 @@ async def edit_catalog_category(update: Update, context: CallbackContext) -> Non
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text(
-        "🔄 *Изменение категории товаров*\n\n"
-        "*Выберите категорию для изменения:*",
+    await send_or_edit_message(
+        update=update,
+        text=(f"🔄 *Изменение категории товаров*\n\n"
+        "*Выберите категорию для изменения:*"),
         reply_markup=reply_markup,
-        parse_mode='Markdown'
+        parse_mode='Markdown',
+        delete_previous=True
     )
 
 async def process_edit_catalog(update: Update, context: CallbackContext) -> None:
