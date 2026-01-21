@@ -1,5 +1,5 @@
 # utils/telegram_utils.py
-from telegram import Update, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import CallbackContext
 import logging
 
@@ -24,8 +24,12 @@ async def send_or_edit_message(
     """
     try:
         if update.callback_query:
-            if delete_previous:
-                # Удаляем сообщение с inline-клавиатурой
+            # Определяем тип клавиатуры
+            is_inline_keyboard = isinstance(reply_markup, InlineKeyboardMarkup)
+            is_reply_keyboard = isinstance(reply_markup, ReplyKeyboardMarkup) or reply_markup is None
+            
+            if delete_previous or is_reply_keyboard:
+                # Для обычных клавиатур или при явном указании удаляем старое сообщение
                 await update.callback_query.delete_message()
                 # Отправляем новое сообщение
                 await update.callback_query.message.reply_text(
@@ -33,9 +37,17 @@ async def send_or_edit_message(
                     reply_markup=reply_markup,
                     parse_mode=parse_mode
                 )
-            else:
-                # Редактируем существующее сообщение
+            elif is_inline_keyboard:
+                # Для inline-клавиатур редактируем существующее сообщение
                 await update.callback_query.edit_message_text(
+                    text=text,
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode
+                )
+            else:
+                # По умолчанию удаляем и отправляем новое
+                await update.callback_query.delete_message()
+                await update.callback_query.message.reply_text(
                     text=text,
                     reply_markup=reply_markup,
                     parse_mode=parse_mode
@@ -51,10 +63,18 @@ async def send_or_edit_message(
         logger.error(f"Ошибка в send_or_edit_message: {e}")
         # Резервный вариант
         try:
-            await update.effective_message.reply_text(
-                text=text,
-                reply_markup=reply_markup,
-                parse_mode=parse_mode
-            )
+            if update.callback_query:
+                await update.callback_query.delete_message()
+                await update.callback_query.message.reply_text(
+                    text=text,
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode
+                )
+            else:
+                await update.effective_message.reply_text(
+                    text=text,
+                    reply_markup=reply_markup,
+                    parse_mode=parse_mode
+                )
         except Exception as e2:
             logger.error(f"Резервный вариант тоже не сработал: {e2}")

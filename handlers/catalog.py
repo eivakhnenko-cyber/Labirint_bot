@@ -489,7 +489,8 @@ async def browse_catalog(update: Update, context: CallbackContext) -> None:
         update=update,
         text="📋 *Справочник товаров*\n\n*Выберите категорию:*",
         reply_markup=reply_markup,
-        parse_mode='Markdown'
+        parse_mode='Markdown',
+        delete_previous=True
     )
 
 async def show_products_by_category(update: Update, context: CallbackContext, category: str = None) -> None:
