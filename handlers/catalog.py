@@ -72,7 +72,6 @@ async def add_to_catalog(update: Update, context: CallbackContext) -> None:
         parse_mode='Markdown'
     )
 
-
 async def del_item_catalog(update: Update, context: CallbackContext) -> None:
     """Удаление товара из справочника с inline-кнопками для выбора категории"""
     user_id = update.effective_user.id
@@ -435,6 +434,9 @@ async def browse_catalog(update: Update, context: CallbackContext) -> None:
     user_id = update.effective_user.id
     
     if not await role_manager.has_permission(user_id, Permission.VIEW_INVENTORY):
+        if update.callback_query:
+            await update.callback_query.answer("❌ У вас нет прав для просмотра справочника товаров.")
+            return
         await update.message.reply_text(
             "❌ У вас нет прав для просмотра справочника товаров.",
             reply_markup=await get_main_keyboard(user_id)
@@ -445,6 +447,15 @@ async def browse_catalog(update: Update, context: CallbackContext) -> None:
     categories = CatalogRepository.get_all_categories_with_counts()
     
     if not categories:
+        # Обработка для callback
+        if update.callback_query:
+            await update.callback_query.edit_message_text(
+                "📭 Справочник товаров пуст.\n"
+                "Добавьте товары через меню управления справочником.",
+                reply_markup=await get_catalog_keyboard(user_id)
+            )
+            return
+        
         await update.message.reply_text(
             "📭 Справочник товаров пуст.\n"
             "Добавьте товары через меню управления справочником.",
@@ -469,12 +480,21 @@ async def browse_catalog(update: Update, context: CallbackContext) -> None:
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    await update.message.reply_text(
-        "📋 *Справочник товаров*\n\n"
-        "*Выберите категорию:*",
-        reply_markup=reply_markup,
-        parse_mode='Markdown'
-    )
+    # Определяем способ отправки сообщения
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            "📋 *Справочник товаров*\n\n"
+            "*Выберите категорию:*",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+    else:
+        await update.message.reply_text(
+            "📋 *Справочник товаров*\n\n"
+            "*Выберите категорию:*",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
 
 async def show_products_by_category(update: Update, context: CallbackContext, category: str = None) -> None:
     """Показать товары выбранной категории с inline-кнопками"""

@@ -81,7 +81,17 @@ async def handle_callback_query(update: Update, context: CallbackContext) -> Non
     
     elif callback_data == "add_product_catalog":
         await add_to_catalog(update, context)
-    
+
+    elif callback_data == "add_product_catalog":
+        # Удаляем сообщение с inline-клавиатурой перед переходом
+        await query.delete_message()
+        await add_to_catalog(update, context)
+
+    elif callback_data == "manage_catalog":
+        # Удаляем сообщение с inline-клавиатурой перед переходом
+        await query.delete_message()
+        await manage_catalog(update, context)
+        
     # Просмотр категорий
     elif callback_data.startswith(CATEGORY_BROWSE_PREFIX):
         category = callback_data[len(CATEGORY_BROWSE_PREFIX):]
