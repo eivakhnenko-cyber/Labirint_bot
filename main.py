@@ -54,7 +54,10 @@ from rep_invent.inventory import (
 )
 from handlers.catalog import (
     manage_catalog, browse_catalog_for_selection, add_to_catalog, edit_catalog_category,
-    edit_catalog_item, show_products_by_category, browse_catalog, del_item_catalog
+    edit_catalog_item, browse_catalog, del_item_catalog
+)
+from rep_catalog.catalog_process import(
+    CatalogRepository
 )
 
 from handlers.reminders import (

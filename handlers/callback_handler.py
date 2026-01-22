@@ -32,8 +32,7 @@ async def handle_callback_query(update: Update, context: CallbackContext) -> Non
         if callback_data.startswith(prefix):
             logger.info(f"Callback {callback_data} пропущен - для ConversationHandler")
             return  # Пропускаем обработку - это для ConversationHandler
-    
-    # Обработка callback-запросов каталога (перенесите сюда логику из catalog.py)
+        
     # ... ваш существующий код обработки каталога ...
     if (callback_data.startswith("delete_level_") or 
         callback_data.startswith("confirm_delete_") or 
@@ -52,7 +51,7 @@ async def handle_callback_query(update: Update, context: CallbackContext) -> Non
     if callback_data == "view_customer_":
         from rep_customer.customers import show_customer_list
         await show_customer_list(update, context)
-    # Продолжайте с вашей существующей логикой:
+
     # Навигация
     if callback_data == "back_to_catalog_menu":
         from handlers.catalog import manage_catalog
@@ -91,7 +90,7 @@ async def handle_callback_query(update: Update, context: CallbackContext) -> Non
         # Удаляем сообщение с inline-клавиатурой перед переходом
         await query.delete_message()
         await manage_catalog(update, context)
-        
+
     # Просмотр категорий
     elif callback_data.startswith(CATEGORY_BROWSE_PREFIX):
         category = callback_data[len(CATEGORY_BROWSE_PREFIX):]
