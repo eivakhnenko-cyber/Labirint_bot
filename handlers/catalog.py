@@ -114,8 +114,7 @@ async def del_item_catalog(update: Update, context: CallbackContext) -> None:
     
     await send_or_edit_message(
         update=update,
-        text=(f"🗑️ *Удаление товара из справочника*\n\n",
-        "*Выберите категорию товара для удаления:*"),
+        text=f"🗑️ *Удаление товара из справочника*\n\n*Выберите категорию товара для удаления:*",
         reply_markup=reply_markup,
         parse_mode='Markdown',
         delete_previous=True  # Важно! Удаляем inline-сообщение перед отправкой обычного
@@ -227,7 +226,8 @@ async def process_catalog_deletion(update: Update, context: CallbackContext) -> 
             await send_or_edit_message(
                 update=update,
                 text="❌ Удаление отменено.",
-                reply_markup=await get_catalog_keyboard(user_id)
+                reply_markup=await get_catalog_keyboard(user_id),
+                delete_previous=True
             )
 
 async def delete_single_product(update: Update, context: CallbackContext, data: dict) -> None:
@@ -663,8 +663,7 @@ async def edit_catalog_item(update: Update, context: CallbackContext) -> None:
     
     await send_or_edit_message(
         update=update,
-        text=(f"✏️ *Редактирование товара в справочнике*\n\n"
-        "Введите название товара или ID для поиска:"),
+        text=f"✏️ *Редактирование товара в справочнике*\n\nВведите название товара или ID для поиска:",
         reply_markup=get_cancel_keyboard(),
         parse_mode='Markdown',
         delete_previous=True
@@ -712,8 +711,7 @@ async def edit_catalog_category(update: Update, context: CallbackContext) -> Non
     
     await send_or_edit_message(
         update=update,
-        text=(f"🔄 *Изменение категории товаров*\n\n"
-        "*Выберите категорию для изменения:*"),
+        text=f"🔄 *Изменение категории товаров*\n\n*Выберите категорию для изменения:*",
         reply_markup=reply_markup,
         parse_mode='Markdown',
         delete_previous=True

@@ -5,6 +5,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from telegram import Update, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram.ext import CallbackContext
+import logging
+
+logger = logging.getLogger(__name__)
+
 async def send_or_edit_message(
     update: Update, 
     text: str, 
@@ -31,8 +37,8 @@ async def send_or_edit_message(
             if delete_previous or is_reply_keyboard:
                 # Для обычных клавиатур или при явном указании удаляем старое сообщение
                 await update.callback_query.delete_message()
-                # Отправляем новое сообщение
-                await update.callback_query.message.reply_text(
+                # Отправляем новое сообщение (БЕЗ reply_to_message_id)
+                await update.callback_query.message.chat.send_message(
                     text=text,
                     reply_markup=reply_markup,
                     parse_mode=parse_mode
@@ -47,7 +53,7 @@ async def send_or_edit_message(
             else:
                 # По умолчанию удаляем и отправляем новое
                 await update.callback_query.delete_message()
-                await update.callback_query.message.reply_text(
+                await update.callback_query.message.chat.send_message(
                     text=text,
                     reply_markup=reply_markup,
                     parse_mode=parse_mode
@@ -64,8 +70,8 @@ async def send_or_edit_message(
         # Резервный вариант
         try:
             if update.callback_query:
-                await update.callback_query.delete_message()
-                await update.callback_query.message.reply_text(
+                # Пытаемся просто отправить сообщение без привязки к удаленному
+                await update.callback_query.message.chat.send_message(
                     text=text,
                     reply_markup=reply_markup,
                     parse_mode=parse_mode
