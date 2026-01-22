@@ -810,7 +810,7 @@ async def handle_product_edit_selection(update: Update, context: CallbackContext
         [InlineKeyboardButton("📝 Описание", callback_data=f"{EDIT_FIELD_PREFIX}description")],
         [
             InlineKeyboardButton("✅ Сохранить", callback_data=f"{SAVE_EDIT_PREFIX}{product_id}"),
-            InlineKeyboardButton("❌ Отмена", callback_data="cancel_edit")
+            InlineKeyboardButton("❌ Отмена", callback_data="cancel_edit_it")
         ]
     ]
     
@@ -825,8 +825,8 @@ async def handle_product_edit_selection(update: Update, context: CallbackContext
         f"*Выберите поле для редактирования:*"
     )
     
-    await query.edit_message_text(
-        message,
+    await send_or_edit_message(
+        text=message,
         reply_markup=InlineKeyboardMarkup(keyboard),
         parse_mode='Markdown'
     )

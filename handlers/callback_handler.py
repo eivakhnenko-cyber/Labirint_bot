@@ -36,6 +36,7 @@ async def handle_callback_query(update: Update, context: CallbackContext) -> Non
     # ... ваш существующий код обработки каталога ...
     if (callback_data.startswith("delete_level_") or 
         callback_data.startswith("confirm_delete_") or 
+        callback_data == "cancel_edit_it" or
         callback_data == "cancel_delete"):
         logger.info(f"Callback для удаления уровней - пропускаем в специальный обработчик: {callback_data}")
         # Возвращаем без обработки - будет обработан в bonus_levels.py
@@ -153,7 +154,6 @@ async def handle_callback_query(update: Update, context: CallbackContext) -> Non
                 [InlineKeyboardButton("🔙 Назад", callback_data="back_to_catalog_menu")]
             ])
         )
-    
     # Отмена редактирования товара
     elif callback_data == "cancel_edit":
         await query.edit_message_text(

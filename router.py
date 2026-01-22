@@ -3,7 +3,7 @@
 """
 
 import logging
-from typing import Dict, Any, Callable, Optional, Awaitable
+from typing import Dict, Any, Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -32,6 +32,7 @@ class Router:
         self._add_route(Buttons.PROFILE, "profile_menu")
         self._add_route(Buttons.REPORT, "report_menu")
         self._add_route(Buttons.EXIT, "exit_command")
+        self._add_route(Buttons.TOOLS,"tools_menu")
         
         # Подменю инвентаризации (старая структура для обратной совместимости)
         self._add_route(Buttons.INVENTORY_LIST, "show_inventory")

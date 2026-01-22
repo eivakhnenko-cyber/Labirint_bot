@@ -27,7 +27,8 @@ from rep_customer.customers import (
     show_customer_list, show_customer_details, show_my_bonuses
 )
 from handlers.handlers_customer import (
-    hand_cust_manager, VIEW_CUSTOMER_PREFIX, CLOSE_CUSTOMER_LIST
+    hand_cust_manager, VIEW_CUSTOMER_PREFIX, 
+    CLOSE_CUSTOMER_LIST, BACK_TO_LIST,CLOSE_DETAILS
 )
 from rep_customer.customer_register import (
     register_customer
@@ -57,7 +58,7 @@ from handlers.catalog import (
     edit_catalog_item, browse_catalog, del_item_catalog
 )
 from rep_catalog.catalog_process import(
-    CatalogRepository
+    CatalogProcessManager
 )
 
 from handlers.reminders import (
@@ -81,7 +82,7 @@ from handlers.menus import (
     back_to_settings, back_to_chat, cleanup_menu,
     profile_info, activate_customer, deactivate_customer, create_program_handler, list_programs_handler,
     register_customer_handler, list_customers_handler, search_customer_menu_handler,
-    add_purchase_handler, check_customer_status,
+    add_purchase_handler, check_customer_status, tools_menu,
     search_by_card, search_by_phone, search_by_name, search_by_id,
     purchase_history, bot_settings_menu, notifications_menu, report_menu
 )
@@ -144,6 +145,7 @@ def main():
         'set_user_role_command': set_user_role_command,
         'manage_users': manage_users,
         'system_stats': system_stats,
+        'tools_menu': tools_menu,
         'make_admin': make_admin,
         
         # Главное меню
@@ -280,7 +282,7 @@ def main():
     
     application.add_handler(edit_user_conversation_handler)
     application.add_handler(CallbackQueryHandler(report_manager.handle_callback, pattern="^report_"))
-    application.add_handler(CallbackQueryHandler(hand_cust_manager, pattern=f"^({VIEW_CUSTOMER_PREFIX}|{CLOSE_CUSTOMER_LIST})"))
+    application.add_handler(CallbackQueryHandler(hand_cust_manager.handle_customer_callback, pattern=f"^({VIEW_CUSTOMER_PREFIX}|{CLOSE_CUSTOMER_LIST}|{BACK_TO_LIST}|{CLOSE_DETAILS})"))
     application.add_handler(CallbackQueryHandler(handle_delete_level_callback, pattern=f"^({DELETE_LEVEL_CALLBACK_PREFIX}|{CONFIRM_DELETE_CALLBACK_PREFIX}|{CANCEL_DELETE_CALLBACK})"))
     application.add_handler(CallbackQueryHandler(handle_callback_query))
     application.add_handler(create_level_conversation)

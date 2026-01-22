@@ -9,6 +9,8 @@ from keyboards.customeers_keyb import get_customers_main_keyboard
 from keyboards.global_keyb import get_cancel_keyboard, get_main_keyboard
 from .customer_manager_class import customer_manager
 from .customer_purchase_class import customer_purchase
+from .customers_inline import show_customer_list_inline
+from utils.telegram_utils import send_or_edit_message
 from handlers.admin_roles_class import role_manager
 
 logger = logging.getLogger(__name__)
@@ -61,11 +63,10 @@ async def search_customer(update: Update, context: CallbackContext) -> None:
     """Начать поиск клиента"""
     user_id = update.effective_user.id
     role = await role_manager.get_user_role(user_id)
-    query = query
-    result = result
     
     if not role_manager.can_manage_customers(role):
-        await update.message.reply_text(
+        await send_or_edit_message(
+            update,
             "⛔ У вас нет прав для поиска клиентов.",
             reply_markup=await get_main_keyboard(user_id)
         )
@@ -76,7 +77,8 @@ async def search_customer(update: Update, context: CallbackContext) -> None:
         'data': {}
     }
     
-    await update.message.reply_text(
+    await send_or_edit_message(
+        update,
         "🔍 *Поиск клиента*\n\n"
         "Введите:\n"
         "• Номер карты (например: LBC-1234-5678-9012)\n"
@@ -86,25 +88,9 @@ async def search_customer(update: Update, context: CallbackContext) -> None:
         reply_markup=get_cancel_keyboard(),
         parse_mode='Markdown'
     )
-    if result:
-        # Показываем результаты с inline-кнопками
-        from .customers_inline import show_customer_list_inline
-        await show_customer_list_inline(update, context, result, search_query=query)
-        
-        # Показываем навигационные кнопки
-        await update.message.reply_text(
-            "👇 *Используйте кнопки для навигации:*",
-            parse_mode='Markdown',
-            reply_markup=get_customers_main_keyboard()
-        )
-    else:
-        await update.message.reply_text(
-            f"❌ По запросу '{query}' ничего не найдено.",
-            reply_markup=get_customers_main_keyboard()
-        )
 
 async def process_customer_search(update: Update, context: CallbackContext) -> None:
-    """Обработка поиска клиента"""
+    """Обработка поиска клиента с использованием inline-подхода"""
     if 'searching_customer' not in context.user_data:
         return
     
@@ -113,7 +99,8 @@ async def process_customer_search(update: Update, context: CallbackContext) -> N
     
     if text == Buttons.CANCEL:
         del context.user_data['searching_customer']
-        await update.message.reply_text(
+        await send_or_edit_message(
+            update,
             "❌ Поиск отменен.",
             reply_markup=await get_customers_main_keyboard()
         )
@@ -124,7 +111,8 @@ async def process_customer_search(update: Update, context: CallbackContext) -> N
         customers = await customer_manager.find_customers_by_search_query(text)
         
         if not customers:
-            await update.message.reply_text(
+            await send_or_edit_message(
+                update,
                 "❌ Клиенты не найдены. Попробуйте другой запрос:",
                 reply_markup=get_cancel_keyboard()
             )
@@ -132,16 +120,21 @@ async def process_customer_search(update: Update, context: CallbackContext) -> N
         
         del context.user_data['searching_customer']
         
-        if len(customers) == 1:
-            # Показываем детальную информацию об одном клиенте
-            await show_customer_details(update, context, customers[0])
-        else:
-            # Показываем список найденных клиентов
-            await show_customer_list(update, context, customers, text)
+        # Используем inline-подход для отображения результатов
+        await show_customer_list_inline(update, context, customers, search_query=text)
+        
+        # Дополнительно показываем обычную клавиатуру для навигации
+        await send_or_edit_message(
+            update,
+            "👇 *Используйте кнопки выше для выбора клиента, а эти для навигации:*",
+            parse_mode='Markdown',
+            reply_markup=await get_customers_main_keyboard()
+        )
             
     except Exception as e:
         logger.error(f"Ошибка поиска клиента: {e}")
-        await update.message.reply_text(
+        await send_or_edit_message(
+            update,
             "❌ Ошибка при поиске клиента. Попробуйте позже.",
             reply_markup=await get_customers_main_keyboard()
         )
@@ -149,13 +142,14 @@ async def process_customer_search(update: Update, context: CallbackContext) -> N
 async def show_customer_details(update: Update, context: CallbackContext, customer: dict) -> None:
     """Показать детальную информацию о клиенте"""
     user_id = update.effective_user.id
-    telegram_id = update.effective_user.id
     
     if customer is None:
+        telegram_id = update.effective_user.id
         customer = await customer_manager.find_customer_by_telegram_id(telegram_id)
         
         if not customer:
-            await update.message.reply_text(
+            await send_or_edit_message(
+                update,
                 "❌ *Вы не найдены в базе клиентов.*\n\n"
                 "Возможные причины:\n"
                 "1. Вы не зарегистрированы как клиент\n"
@@ -209,7 +203,7 @@ async def show_customer_details(update: Update, context: CallbackContext, custom
     
     message += f"🆔 *ID клиента:* {customer['customer_id']}\n"
     
-    if customer.get('telegram_id'): # was user_id
+    if customer.get('telegram_id'):
         message += f"🆔 *ID пользователя:* {customer['telegram_id']}\n"
     
     if reg_date:
@@ -230,28 +224,32 @@ async def show_customer_details(update: Update, context: CallbackContext, custom
     if customer.get('program_name'):
         message += f"🎪 *Бонусная программа:* {customer['program_name']} ({customer.get('base_percent', 0)}%)\n"
     
-    # Создаем кнопки навигации
-    buttons = []
-    
-    # Добавляем кнопки для возврата к списку
-    if 'search_results' in context.user_data:
-        buttons.append(["🔙 Назад к результатам поиска"])
-    elif 'all_customers_list' in context.user_data:
-        buttons.append(["🔙 Назад к списку клиентов"])
-    
-    # Кнопка для начисления покупки
-    await get_bonus_keyboard(user_id)
-
-    keyboard = ReplyKeyboardMarkup(buttons, resize_keyboard=True) if buttons else None
-    
     # Сохраняем данные клиента в контекст
     context.user_data['last_searched_customer'] = customer
     
-    await update.message.reply_text(
-        message,
-        reply_markup=keyboard,
-        parse_mode='Markdown'
-    )
+    # Для inline-обработки (например, из списка клиентов) используем inline-функцию
+    if update.callback_query:
+        # Если это callback от inline-кнопки, используем inline-подход
+        from .customers_inline import show_customer_details_inline
+        await show_customer_details_inline(update, context, customer)
+    else:
+        # Если это обычное сообщение, используем обычную клавиатуру
+        buttons = []
+        
+        # Добавляем кнопки для возврата к списку
+        if 'search_results' in context.user_data:
+            buttons.append(["🔙 Назад к результатам поиска"])
+        elif 'all_customers_list' in context.user_data:
+            buttons.append(["🔙 Назад к списку клиентов"])
+        
+        keyboard = ReplyKeyboardMarkup(buttons, resize_keyboard=True) if buttons else None
+        
+        await send_or_edit_message(
+            update,
+            message,
+            reply_markup=keyboard,
+            parse_mode='Markdown'
+        )
 
 async def show_customer_list(update: Update, context: CallbackContext, customers: list, search_query: str = None) -> None:
     """Показать список клиентов с inline-кнопками"""
@@ -338,44 +336,62 @@ async def show_customer_list(update: Update, context: CallbackContext, customers
     context.user_data[list_key] = customers
 
 async def list_all_customers(update: Update, context: CallbackContext) -> None:
-    """Показать всех клиентов - гибридный подход"""
-    from .customer_manager_class import get_all_customers  # ваш менеджер
-    from keyboards.customeers_keyb import get_customers_menu_keyboard  # ваша клавиатура
+    """Показать всех клиентов с использованием inline-подхода"""
+    user_id = update.effective_user.id
+    role = await role_manager.get_user_role(user_id)
     
-    # 1. Получаем клиентов
-    customers = get_all_customers()
-    
-    if not customers:
-        await update.message.reply_text(
-            "📭 Нет зарегистрированных клиентов.",
-            reply_markup=get_customers_menu_keyboard()
+    if not role_manager.can_manage_customers(role):
+        await send_or_edit_message(
+            update,
+            "⛔ У вас нет прав для просмотра списка клиентов.",
+            reply_markup=await get_main_keyboard(user_id)
         )
         return
     
-    # 2. Показываем inline-сообщение со списком клиентов
-    from .customers_inline import show_customer_list_inline
-    await show_customer_list_inline(update, context, customers)
-    
-    # 3. Отдельно показываем обычные кнопки навигации
-    await update.message.reply_text(
-        "👇 *Используйте кнопки для навигации:*",
-        parse_mode='Markdown',
-        reply_markup=get_customers_menu_keyboard()  # Ваша обычная клавиатура
-    )
+    try:
+        # 1. Получаем клиентов с await
+        customers = await customer_manager.get_all_customers()
+        
+        if not customers:
+            await send_or_edit_message(
+                update,
+                "📭 Нет зарегистрированных клиентов.",
+                reply_markup=await get_customers_main_keyboard()
+            )
+            return
+        
+        # 2. Показываем inline-сообщение со списком клиентов
+        await show_customer_list_inline(update, context, customers)
+        
+        # 3. Отдельно показываем обычные кнопки навигации
+        await send_or_edit_message(
+            update,
+            "👇 *Используйте кнопки выше для выбора клиента, а эти для навигации:*",
+            parse_mode='Markdown',
+            reply_markup=await get_customers_main_keyboard()
+        )
+        
+    except Exception as e:
+        logger.error(f"Ошибка получения списка клиентов: {e}")
+        await send_or_edit_message(
+            update,
+            "❌ Ошибка при загрузке списка клиентов. Попробуйте позже.",
+            reply_markup=await get_customers_main_keyboard()
+        )
 
 async def show_my_bonuses(update: Update, context: CallbackContext) -> None:
     """Показать бонусы текущего пользователя"""
     telegram_id = update.effective_user.id
 
     try:
-                
         customer = await customer_manager.find_customer_by_telegram_id(telegram_id)
         logger.info(f"Отображение бонусной для: {telegram_id}")
 
         if customer:
             await show_customer_details(update, context, customer)
         else:
-            await update.message.reply_text(
+            await send_or_edit_message(
+                update,
                 "📝 *Вы не зарегистрированы как клиент.*\n\n"
                 "Чтобы участвовать в бонусной программе:\n"
                 "1. Обратитесь к администратору\n"
@@ -387,24 +403,25 @@ async def show_my_bonuses(update: Update, context: CallbackContext) -> None:
             
     except Exception as e:
         logger.error(f"Ошибка поиска клиента для показа бонусов: {e}")
-        await update.message.reply_text(
+        await send_or_edit_message(
+            update,
             "❌ Ошибка при загрузке данных. Попробуйте позже.",
             reply_markup=await get_main_keyboard(telegram_id)
         )
 
 async def show_my_stat(update: Update, context: CallbackContext) -> None:
-    """Показать бонусы текущего пользователя"""
+    """Показать статистику текущего пользователя"""
     telegram_id = update.effective_user.id
 
     try:
-                
         customer = await customer_manager.find_customer_by_telegram_id(telegram_id)
-        logger.info(f"Отображение бонусной для: {telegram_id}")
+        logger.info(f"Отображение статистики для: {telegram_id}")
 
         if customer:
             await show_customer_details(update, context, customer)
         else:
-            await update.message.reply_text(
+            await send_or_edit_message(
+                update,
                 "📝 *Вы не зарегистрированы как клиент.*\n\n"
                 "Чтобы участвовать в бонусной программе:\n"
                 "1. Обратитесь к администратору\n"
@@ -415,8 +432,9 @@ async def show_my_stat(update: Update, context: CallbackContext) -> None:
             )
             
     except Exception as e:
-        logger.error(f"Ошибка поиска клиента для показа бонусов: {e}")
-        await update.message.reply_text(
+        logger.error(f"Ошибка поиска клиента для показа статистики: {e}")
+        await send_or_edit_message(
+            update,
             "❌ Ошибка при загрузке данных. Попробуйте позже.",
             reply_markup=await get_main_keyboard(telegram_id)
         )

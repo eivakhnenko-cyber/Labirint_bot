@@ -1,9 +1,8 @@
 # handlers/reminder_manager.py
 import logging
 from datetime import datetime, time, timedelta
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, Any
 import pytz
-from telegram import Update
 from telegram.ext import CallbackContext
 
 from database import sqlite_connection

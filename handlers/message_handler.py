@@ -49,14 +49,8 @@ from handlers.handlers_bonus_levels import (
     edit_level_handler, level_statistics_handler, delete_level_handler,
     confirm_delete_level_handler
 )
-from handlers.catalog import (
-    #browse_catalog_for_selection, 
-    #show_product_for_editing_inline, # замена process_edit_category, 
-    #process_edit_catalog, 
-    process_edit_category,
-    process_edit_catalog,
-    process_catalog_deletion, 
-    process_catalog_addition
+from rep_catalog.catalog_process import (
+    CatalogProcessManager
 )
 from rep_report.report_watch import report_manager
 
@@ -149,11 +143,12 @@ class MessageHandler:
             ('adding_item_method', process_item_input),  # обработка ввода даннных
             ('selected_product', _process_unit),  # обработка единицы измерения
             ('editing_catalog', handle_callback_query), # процесс редактирования товара (использует process_edit_catalog)
-            ('editing_category', process_edit_catalog), # процесс изменения категории (использует process_edit_category)
-            ('selected_category', process_edit_category), # процесс выбора товара из каталога (использует browse_catalog_for_selection)
-            ('catalog_products', process_catalog_addition),
-            ('adding_to_catalog', process_catalog_addition), # процесс добавления товара (использует process_catalog_addition)
-            ('deleting_from_catalog', process_catalog_deletion), # процесс удаления товара (использует process_catalog_deletion)
+            ('editing_category', CatalogProcessManager.process_edit_catalog), # процесс изменения категории (использует process_edit_category)
+            ('selected_category', CatalogProcessManager.process_edit_category), # процесс выбора товара из каталога (использует browse_catalog_for_selection)
+            ('catalog_products', CatalogProcessManager.process_catalog_addition),
+            ('adding_to_catalog', CatalogProcessManager.process_catalog_addition), # процесс добавления товара (использует process_catalog_addition)
+            ('deleting_from_catalog', CatalogProcessManager.process_catalog_deletion), # процесс удаления товара (использует process_catalog_deletion)
+            ('cancel_edit_it', handle_callback_query),
             
             # Процессы по работе с администрированием
 

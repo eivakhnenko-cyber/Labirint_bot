@@ -26,6 +26,7 @@ class MenuConfig:
         },
         Buttons.BONUS_SYSTEM: Permission.VIEW_BONUSES,
         Buttons.ADMINISTRATION: UserRole.ADMIN,  # Только админам
+        Buttons.TOOLS: None,
         Buttons.PROFILE: None,  # Доступно всем
         Buttons.REPORT: Permission.VIEW_REPORTS,
         Buttons.EXIT: None

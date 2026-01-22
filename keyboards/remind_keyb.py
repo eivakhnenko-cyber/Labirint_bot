@@ -17,7 +17,7 @@ async def get_reminders_keyboard(user_id: int):
         keyboard.append([Buttons.CHECK_JOBS, Buttons.RELOAD_JOBS])
     
     # Назад
-    keyboard.append([Buttons.BACK_TO_MAIN])
+    keyboard.append([Buttons.BACK])
     
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 

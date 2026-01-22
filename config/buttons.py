@@ -12,6 +12,7 @@ class Buttons:
     CUSTOMERS = "👥 Клиенты"
     BONUS_SYSTEM = "🎁 Бонусная система"
     ADMINISTRATION = "⚙️ Администрирование"
+    TOOLS = "🔧 Инструменты"
     EXIT = "🚪 Выход"
     BACK_TO_MAIN = "🔙 Назад в главное меню"
     

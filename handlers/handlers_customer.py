@@ -4,6 +4,9 @@ import logging
 
 from config.buttons import Buttons
 from rep_customer.customers import *
+from rep_customer.customers_inline import show_customer_details_inline
+from rep_customer.customer_manager_class import customer_manager
+
 logger = logging.getLogger(__name__)
 
 VIEW_CUSTOMER_PREFIX = "view_customer_"
@@ -54,13 +57,13 @@ class HandCustManager:
                 
                 # Получаем клиента из базы (нужен импорт вашего менеджера)
                 from rep_customer.customer_manager_class import customer_manager  # или ваш менеджер
-                customer = customer_manager.find_customer_by_id(customer_id)
+                customer = await customer_manager.find_customer_by_id(customer_id)
                 
                 if not customer:
                     await query.edit_message_text(f"❌ Клиент с ID {customer_id} не найден")
                     return
                 
-                await show_customer_details(query, context, customer)
+                await show_customer_details_inline(query, context, customer)
         except Exception as e:
             self.logger.error(f"Ошибка обработки callback клиента: {e}")
             try:
@@ -172,14 +175,14 @@ class HandCustManager:
                         customer_found['customer_id']
                     )
                     if full_customer:
-                        await show_customer_details(update, context, full_customer)
+                        await show_customer_details_inline(update, context, full_customer)
                     else:
                         await update.message.reply_text(
                             "❌ Не удалось загрузить полные данные клиента.",
                             reply_markup=await get_customers_main_keyboard()
                         )
                 else:
-                    await show_customer_details(update, context, customer_found)
+                    await show_customer_details_inline(update, context, customer_found)
             else:
                 self.logger.warning(f"Клиент не найден в списке, пробуем найти в БД напрямую...")
                 
@@ -187,13 +190,13 @@ class HandCustManager:
                 if customer_id:
                     customer = await customer_manager.find_customer_by_id(customer_id)
                     if customer:
-                        await show_customer_details(update, context, customer)
+                        await show_customer_details_inline(update, context, customer)
                     else:
                         # Пробуем найти по имени
                         if customer_name:
                             search_results = await customer_manager.find_customers_by_search_query(customer_name)
                             if search_results and len(search_results) == 1:
-                                await show_customer_details(update, context, search_results[0])
+                                await show_customer_details_inline(update, context, search_results[0])
                             elif search_results and len(search_results) > 1:
                                 await show_customer_list(update, context, search_results, customer_name)
                             else:
@@ -210,7 +213,7 @@ class HandCustManager:
                     # Пробуем найти по тексту как поисковому запросу
                     search_results = await customer_manager.find_customers_by_search_query(text)
                     if search_results and len(search_results) == 1:
-                        await show_customer_details(update, context, search_results[0])
+                        await show_customer_details_inline(update, context, search_results[0])
                     elif search_results and len(search_results) > 1:
                         await show_customer_list(update, context, search_results, text)
                     else:

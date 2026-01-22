@@ -15,6 +15,10 @@ async def get_bonus_system_keyboard(user_id: int):
         keyboard.append([Buttons.LOYALTY_PROGRAM, Buttons.LEVELS_SETTINGS])
         keyboard.append([Buttons.PROMOCODES])
     
+    elif role == UserRole.MANAGER:
+        keyboard.append([Buttons.SEARCH_CUSTOMER, Buttons.CUSTOMER_STATISTICS])
+        keyboard.append([Buttons.ADD_CUSTOMER_BONUS, Buttons.DEL_CUSTOMER_BONUS])
+
     elif role == UserRole.VISITOR:
         keyboard.append([Buttons.GET_MY_BONUS, Buttons.GET_MY_STAT])
         keyboard.append([Buttons.GET_MY_LEVEL])

@@ -5,7 +5,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes, CallbackContext
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from keyboards.global_keyb import get_main_keyboard
+from keyboards.global_keyb import get_main_keyboard, get_tools_keyboard
 from keyboards.report_keyb import get_main_report_keyboard
 from keyboards.admin_keyb import (
     get_admin_keyboard, get_user_management_keyboard,
@@ -23,7 +23,7 @@ from keyboards.bonus_keyb import (
 from keyboards.customeers_keyb import get_customer_search_keyboard
 from rep_report.report_watch import report_manager
 from rep_invent.inventory import (
-    create_inventory_list, clear_inventory, add_item,
+    create_inventory_list, add_item,
     show_inventory 
 )
 
@@ -99,6 +99,14 @@ async def customers_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def bonus_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Меню бонусной системы"""
     await bonus_system(update, context)
+
+async def tools_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Меню инструкментов системы"""
+    await update.message.reply_text(
+        "*Инструменты*\n\nВыберите действие:",
+        reply_markup=get_tools_keyboard(),
+        parse_mode='Markdown'
+    )
 
 async def admin_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Меню администрирования"""
