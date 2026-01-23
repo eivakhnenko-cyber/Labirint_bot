@@ -22,13 +22,15 @@ async def manage_customers(update: Update, context: CallbackContext) -> None:
     role = await role_manager.get_user_role(user_id)
     
     if not role_manager.can_manage_customers(role):
-        await update.message.reply_text(
+        await send_or_edit_message(
+            update,
             "⛔ У вас нет прав для управления клиентами.",
             reply_markup=await get_main_keyboard(user_id)
         )
         return
     
-    await update.message.reply_text(
+    await send_or_edit_message(
+        update,
         "👥 *Управление клиентами*\n\n"
         "Выберите действие:",
         reply_markup=await get_customers_main_keyboard(),
@@ -238,9 +240,9 @@ async def show_customer_details(update: Update, context: CallbackContext, custom
         
         # Добавляем кнопки для возврата к списку
         if 'search_results' in context.user_data:
-            buttons.append(["🔙 Назад к результатам поиска"])
+            buttons.append([Buttons.BACK_TO_SEARCH_RESULT])
         elif 'all_customers_list' in context.user_data:
-            buttons.append(["🔙 Назад к списку клиентов"])
+            buttons.append([Buttons.BACK_TO_CUSTOMERS_LIST])
         
         keyboard = ReplyKeyboardMarkup(buttons, resize_keyboard=True) if buttons else None
         

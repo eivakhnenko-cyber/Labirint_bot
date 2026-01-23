@@ -40,6 +40,7 @@ async def register_customer(update: Update, context: CallbackContext) -> None:
 
 async def process_customer_registration(update: Update, context: CallbackContext) -> None:
     """Обработка регистрации клиента"""
+    user_id = update.effective_user.id
     if 'registering_customer' not in context.user_data:
         return
     
@@ -49,7 +50,7 @@ async def process_customer_registration(update: Update, context: CallbackContext
     
     if text == Buttons.CANCEL:
         del context.user_data['registering_customer']
-        user_id = update.effective_user.id
+
         await update.message.reply_text(
             "❌ Регистрация отменена.",
             reply_markup=await get_customers_main_keyboard()

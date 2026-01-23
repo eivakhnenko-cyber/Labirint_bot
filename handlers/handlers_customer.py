@@ -78,18 +78,29 @@ class HandCustManager:
         self.logger.info(f"Выбор клиента: '{text}'")
         self.logger.info(f"Контекст: {list(context.user_data.keys())}")
         
+        if text == Buttons.BACK_TO_MAIN:
+        # Очищаем контекст клиентов
+            context.user_data.pop('all_customers_list', None)
+            context.user_data.pop('search_results', None)
+            context.user_data.pop('searching_customer', None)
+        
+        # Возвращаемся в главное меню
+            from handlers.menus import back_to_main  # или ваш импорт
+            await back_to_main(update, context)
+            return
+
         # Проверяем навигационные кнопки
-        if text == Buttons.SEARCH_CUSTOMER or text == "🔍 Поиск клиента":
+        if text == Buttons.SEARCH_CUSTOMER:
             await search_customer(update, context)
             return
-        elif text == Buttons.BACK_TO_CUSTOMERS or text == "🔙 Назад к клиентам":
+        elif text == Buttons.BACK_TO_CUSTOMERS:
             await manage_customers(update, context)
             return
         elif text == Buttons.ADD_PURCHASE:
             from rep_customer.customer_purchase import add_purchase
             await add_purchase(update, context)
             return
-        elif text == "🔙 Назад к результатам поиска" or text == "🔙 Назад к списку клиентов":
+        elif text == Buttons.BACK_TO_SEARCH_RESULT or text == Buttons.BACK_TO_CUSTOMERS_LIST:
             # Восстанавливаем предыдущий список
             if 'search_results' in context.user_data or 'all_customers_list' in context.user_data:
                 await list_all_customers(update, context)
@@ -110,14 +121,16 @@ class HandCustManager:
             customers = context.user_data['all_customers_list']
             list_type = 'all'
         else:
-            await update.message.reply_text(
+            await send_or_edit_message(
+                update,
                 "Сессия истекла. Начните поиск заново.",
                 reply_markup=await get_customers_main_keyboard()
             )
             return
         
         if not customers:
-            await update.message.reply_text(
+            await send_or_edit_message(
+                update,
                 "Список клиентов пуст. Начните поиск заново.",
                 reply_markup=await get_customers_main_keyboard()
             )
@@ -177,7 +190,8 @@ class HandCustManager:
                     if full_customer:
                         await show_customer_details_inline(update, context, full_customer)
                     else:
-                        await update.message.reply_text(
+                        await send_or_edit_message(
+                            update,
                             "❌ Не удалось загрузить полные данные клиента.",
                             reply_markup=await get_customers_main_keyboard()
                         )
@@ -200,12 +214,14 @@ class HandCustManager:
                             elif search_results and len(search_results) > 1:
                                 await show_customer_list(update, context, search_results, customer_name)
                             else:
-                                await update.message.reply_text(
+                                await send_or_edit_message(
+                                    update,
                                     f"❌ Клиент с ID {customer_id} не найден.",
                                     reply_markup=await get_customers_main_keyboard()
                                 )
                         else:
-                            await update.message.reply_text(
+                            await send_or_edit_message(
+                                update,
                                 f"❌ Клиент с ID {customer_id} не найден.",
                                 reply_markup=await get_customers_main_keyboard()
                             )
@@ -217,14 +233,16 @@ class HandCustManager:
                     elif search_results and len(search_results) > 1:
                         await show_customer_list(update, context, search_results, text)
                     else:
-                        await update.message.reply_text(
+                        await send_or_edit_message(
+                            update,
                             "❌ Клиент не найден.",
                             reply_markup=await get_customers_main_keyboard()
                         )
                     
         except Exception as e:
             self.logger.error(f"Ошибка выбора клиента: {e}", exc_info=True)
-            await update.message.reply_text(
+            await send_or_edit_message(
+                update,
                 "❌ Ошибка при выборе клиента. Попробуйте снова.",
                 reply_markup=await get_customers_main_keyboard()
             )

@@ -9,6 +9,7 @@ from keyboards.customeers_keyb import get_customers_main_keyboard
 from keyboards.global_keyb import get_cancel_keyboard, get_main_keyboard
 from handlers.admin_roles_class import role_manager
 from .customer_purchase_class import customer_purchase
+from utils.telegram_utils import send_or_edit_message
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,8 @@ async def add_purchase(update: Update, context: CallbackContext) -> None:
     role = await role_manager.get_user_role(user_id)
     
     if not role_manager.can_manage_customers(role):
-        await update.message.reply_text(
+        await send_or_edit_message(
+            update,
             "⛔ У вас нет прав для начисления покупок.",
             reply_markup=await get_main_keyboard(user_id)
         )
@@ -30,7 +32,8 @@ async def add_purchase(update: Update, context: CallbackContext) -> None:
         'data': {}
     }
     
-    await update.message.reply_text(
+    await send_or_edit_message(
+        update,
         "💰 *Начисление покупки клиенту*\n\n"
         "Введите номер карты клиента:",
         reply_markup=get_cancel_keyboard(),
