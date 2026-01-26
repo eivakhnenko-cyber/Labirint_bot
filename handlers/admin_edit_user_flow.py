@@ -5,7 +5,6 @@ from telegram.ext import CallbackContext, ConversationHandler, CallbackQueryHand
 from handlers.admin_roles_class import role_manager, Permission
 from handlers.admin_users_class import users_manager
 from keyboards.admin_keyb import get_user_management_keyboard, EditUserStep
-from keyboards.global_keyb import get_main_keyboard
 from config.buttons import Buttons
 
 logger = logging.getLogger(__name__)

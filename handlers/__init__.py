@@ -55,7 +55,6 @@ from rep_customer.customer_register import (
 
 # Экспорт функций из menus.py
 from .menus import *
-from .reminder_manager import ReminderManager
 
 __all__ = [
     'start',

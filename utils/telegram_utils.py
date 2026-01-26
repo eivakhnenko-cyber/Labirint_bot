@@ -1,15 +1,9 @@
 # utils/telegram_utils.py
 from telegram import Update, InlineKeyboardMarkup, ReplyKeyboardMarkup
-from telegram.ext import CallbackContext
 import logging
 
 logger = logging.getLogger(__name__)
 
-from telegram import Update, InlineKeyboardMarkup, ReplyKeyboardMarkup
-from telegram.ext import CallbackContext
-import logging
-
-logger = logging.getLogger(__name__)
 
 async def send_or_edit_message(
     update: Update, 

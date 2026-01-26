@@ -180,7 +180,6 @@ class UserManager:
     async def get_users_without_visitors(self) -> List[Dict]:
         """Получает список пользователей без посетителей"""
         try:
-
             with sqlite_connection() as conn:
                 cursor = conn.cursor()
 
@@ -237,13 +236,13 @@ class UserManager:
                         role_name = role_manager.get_role_name(role_obj)
                     except (ValueError, KeyError):
                         role_name = "Неизвестно"
-                        users.append({
-                            'user_id': row['user_id'],
-                            'role': row['role'],
-                            'role_name': role_name,
-                            'created_at': row['created_at'],
-                            'updated_at': row['updated_at']
-                        })
+                    users.append({
+                        'user_id': row['user_id'],
+                        'role': row['role'],
+                        'role_name': role_name,
+                        'created_at': row['created_at'],
+                        'updated_at': row['updated_at']
+                    })
                 
                 return users
             self.logger.info(f"список получен: {users}") 

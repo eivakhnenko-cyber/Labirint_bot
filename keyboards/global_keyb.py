@@ -11,7 +11,6 @@ async def get_main_keyboard(user_id: int = None):
         ]
     else:
         keyboard = []
-      
         # Администрирование (только для админов)
         keyboard.append([Buttons.ADMINISTRATION, Buttons.BONUS_SYSTEM]) 
         keyboard.append([Buttons.REPORT, Buttons.TOOLS])

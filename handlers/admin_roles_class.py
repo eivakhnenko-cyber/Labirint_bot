@@ -1,13 +1,13 @@
 # handlers/roles.py
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 from enum import Enum
 from database import sqlite_connection
 
 logger = logging.getLogger(__name__)
 
 class UserRole(Enum):
-    """Система ролей пользователей. Всего 4 роли."""
+    """Система ролей пользователей."""
     ADMIN = "admin" # Администратор - полный доступ
     MANAGER = "manager"  # Менеджер - почти полный доступ, кроме управления ролям
     BARISTA = "barista"  # Бариста - ограниченный доступ для операций
