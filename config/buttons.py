@@ -28,7 +28,7 @@ class Buttons:
     CATALOG = "📁 Управление справочником"
     SELECT_CATALOG = "📋 Выбрать из справочника"
     ADD_ARM_CATALOG = "✏️ Ввести вручную"
-    ADD_CATALOG = "➕ Добавить в справочник" 
+    ADD_ITEM_CATALOG = "➕ Добавить в справочник" 
     EDIT_CATEGORY = "🔄 Изменить категорию"
     OTHER_CATEGORY = "📁 Другие категории"
     VIEW_CATALOG = "📋 Просмотр справочника"

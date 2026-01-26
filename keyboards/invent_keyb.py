@@ -39,7 +39,7 @@ async def get_catalog_keyboard(user_id: int = None):
     """Меню управления справочником товаров"""
     return ReplyKeyboardMarkup(
         [
-            [Buttons.ADD_CATALOG, Buttons.VIEW_CATALOG],
+            [Buttons.ADD_ITEM_CATALOG, Buttons.VIEW_CATALOG],
             [Buttons.EDIT_CATALOG, Buttons.EDIT_CATEGORY, Buttons.DEL_ITEM_CATALOG],
             [Buttons.BACK_TO_INVENTORY]
         ],

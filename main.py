@@ -283,7 +283,7 @@ def main():
     message_handler = create_message_handler(handlers_registry)
     
     application.add_handler(edit_user_conversation_handler)
-    application.add_handler(CallbackQueryHandler(report_manager.handle_callback, pattern="^report_"))
+    application.add_handler(CallbackQueryHandler(report_manager.handle_callback, pattern=f"^({"report_"}|{"main_menu"})"))
     application.add_handler(CallbackQueryHandler(hand_cust_manager.handle_customer_callback, pattern=f"^({VIEW_CUSTOMER_PREFIX}|{CLOSE_CUSTOMER_LIST}|{BACK_TO_LIST}|{CLOSE_DETAILS})"))
     application.add_handler(CallbackQueryHandler(handle_delete_level_callback, pattern=f"^({DELETE_LEVEL_CALLBACK_PREFIX}|{CONFIRM_DELETE_CALLBACK_PREFIX}|{CANCEL_DELETE_CALLBACK})"))
     application.add_handler(CallbackQueryHandler(handle_callback_query))

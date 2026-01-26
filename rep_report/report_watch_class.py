@@ -363,6 +363,27 @@ class ReportWatchDB:
             logger.error(f"Ошибка обновления поля {field}: {e}")
             return False
     
+    async def get_user_info(user_id: int) -> Optional[Dict[str, Any]]:
+        """Получить информацию о пользователе"""
+        try:
+            with sqlite_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT u.user_id, u.username, u.phone_numb as phone_number
+                        FROM users u
+                        WHERE u.user_id = ?
+                    ''', (user_id,))
+                    
+                    row = cursor.fetchone()
+                    if row:
+                        return dict(row)
+                    return None
+                    
+        except Exception as e:
+            logger.error(f"Ошибка получения данных пользователя: {e}")
+            return None
+    
+
     @staticmethod
     def get_daily_report(date: str = None) -> Dict[str, Any]:
         """

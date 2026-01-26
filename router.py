@@ -44,7 +44,7 @@ class Router:
 
         # Кнопки для работы со справочником (каталогом)
         self._add_route(Buttons.CATALOG, "manage_catalog")
-        self._add_route(Buttons.ADD_CATALOG, "add_to_catalog")
+        self._add_route(Buttons.ADD_ITEM_CATALOG, "add_to_catalog")
         self._add_route(Buttons.EDIT_CATALOG, "edit_catalog_item")
         self._add_route(Buttons.VIEW_CATALOG, "browse_catalog")
         self._add_route(Buttons.EDIT_CATEGORY, "edit_catalog_category")

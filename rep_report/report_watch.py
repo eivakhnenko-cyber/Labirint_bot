@@ -1,10 +1,10 @@
 import logging
-from typing import Optional, Dict, Any, List
-from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes
 from .report_watch_class import ReportWatchDB
-from database import sqlite_connection
+from utils.telegram_utils import send_or_edit_message
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class ReportWatchManager:
         user_id = update.effective_user.id
         
         # Получаем данные пользователя
-        user_info = self._get_user_info(user_id)
+        user_info = await ReportWatchDB.get_user_info(user_id)
         if not user_info:
             await update.message.reply_text("❌ Не удалось получить данные пользователя")
             return
@@ -54,26 +54,6 @@ class ReportWatchManager:
             "Введите сумму наличных в кассе на начало смены (в рублях):"
         )
     
-    def _get_user_info(self, user_id: int) -> Optional[Dict[str, Any]]:
-        """Получить информацию о пользователе"""
-        try:
-            with sqlite_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT u.user_id, u.username, u.phone_numb as phone_number
-                    FROM users u
-                    WHERE u.user_id = ?
-                ''', (user_id,))
-                
-                row = cursor.fetchone()
-                if row:
-                    return dict(row)
-                return None
-                
-        except Exception as e:
-            logger.error(f"Ошибка получения данных пользователя: {e}")
-            return None
-    
     async def process_cash_morning(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обработать ввод начальной суммы"""
         try:
@@ -103,7 +83,7 @@ class ReportWatchManager:
                 
                 keyboard = [
                     [InlineKeyboardButton("➕ Добавить расход", callback_data=f"report_add_expense_{report_id}")],
-                    [InlineKeyboardButton("💰 Внести приход", callback_data=f"report_add_cash_{report_id}")],
+                    [InlineKeyboardButton("💰 Внести наличные", callback_data=f"report_add_cash_{report_id}")],
                     [InlineKeyboardButton("💳 Безналичные", callback_data=f"report_add_online_{report_id}")],
                     [InlineKeyboardButton("📊 Показать отчет", callback_data=f"report_show_{report_id}")],
                     [InlineKeyboardButton("✅ Закрыть смену", callback_data=f"report_close_{report_id}")]
@@ -177,9 +157,7 @@ class ReportWatchManager:
                 # Очищаем контекст
                 context.user_data.pop('adding_expense', None)
                 context.user_data.pop('expense_report_id', None)
-                
-                # Показываем обновленный отчет - ИСПРАВЛЕНО!
-                # Вместо вызова show_report, который может вызвать ошибку,
+
                 # напрямую вызываем _show_report_message
                 await self._show_report_message(update, report_id, is_message=True)
             else:
@@ -379,7 +357,7 @@ class ReportWatchManager:
             message += f"#{report['report_id']} - {report['created_at']} - {status}\n"
             message += f"  Начало: {report['cash_morning']} ₽ | "
             message += f"Расход: {report['cash_wasted']} ₽ | "
-            message += f"Приход: {report['cash_in']} ₽\n"
+            message += f"Наличные: {report['cash_in']} ₽\n"
             message += f"  Безнал: {report['cash_online']} ₽ | "
             message += f"Остаток: {report['cash_rest']} ₽\n"
             
@@ -416,6 +394,7 @@ class ReportWatchManager:
     async def show_daily_summary(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Показать сводный отчет за день"""
         query = update.callback_query
+        user_id = update.effective_user.id
         await query.answer()
         
         # Получаем сводный отчет
@@ -425,7 +404,7 @@ class ReportWatchManager:
         message += f"📊 Количество смен: {summary['report_count']}\n"
         message += f"💵 Итог на утро: {summary['total_morning']} ₽\n"
         message += f"📝 Итог расходов: {summary['total_wasted']} ₽\n"
-        message += f"💰 Итог прихода: {summary['total_in']} ₽\n"
+        message += f"💰 Итог наличных: {summary['total_in']} ₽\n"
         message += f"💳 Итог безнала: {summary['total_online']} ₽\n"
         message += f"📊 Итоговый остаток: {summary['total_rest']} ₽\n\n"
         
@@ -433,7 +412,7 @@ class ReportWatchManager:
         total_revenue = summary['total_in'] + summary['total_online']
         message += f"🏆 Общая выручка: {total_revenue} ₽\n"
         
-        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data=f"report_history_{update.effective_user.id}")]]
+        keyboard = [[InlineKeyboardButton("⬅️ Назад", callback_data=f"report_history_{user_id}")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(message, reply_markup=reply_markup)
@@ -441,53 +420,59 @@ class ReportWatchManager:
     async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Обработчик callback-запросов"""
         query = update.callback_query
-        data = query.data
-        
+        data_rep = query.data
+        user_id = update.effective_user.id
         try:
-            if data == "main_menu":
+            if data_rep == "main_menu":
                 # Очищаем контекст отчетности
                 keys_to_remove = ['active_report_id', 'creating_report', 'adding_expense', 
                                 'expense_report_id', 'adding_cash_in', 'cash_in_report_id',
-                                'adding_online', 'online_report_id']
+                                'adding_online', 'online_report_id', 'report_history_']
                 for key in keys_to_remove:
                     context.user_data.pop(key, None)
-                
+                 # ОТВЕЧАЕМ НА CALLBACK (важно сделать это до отправки нового сообщения)
+                await query.answer()
+                # Удаляем старое inline-сообщение
+                await query.delete_message()
                 # Возвращаем в главное меню
-                from keyboards.global_keyb import get_main_keyboard
-                await query.edit_message_text(
-                    "Главное меню:",
-                    reply_markup=await get_main_keyboard(user_id)
+                from keyboards.report_keyb import get_main_report_keyboard
+                
+                main_keyboard = await get_main_report_keyboard(user_id)
+                await context.bot.send_message(
+                    chat_id=user_id,
+                    text="Главное меню:",
+                    reply_markup=main_keyboard
                 )
                 return
-            elif data.startswith('report_show_'):
-                report_id = int(data.split('_')[2])
+            elif data_rep.startswith('report_show_'):
+                report_id = int(data_rep.split('_')[2])
                 await self.show_report(update, context, report_id)
                 
-            elif data.startswith('report_add_expense_'):
-                report_id = int(data.split('_')[3])
+            elif data_rep.startswith('report_add_expense_'):
+                report_id = int(data_rep.split('_')[3])
                 await self.add_expense(update, context, report_id)
                 
-            elif data.startswith('report_add_cash_'):
-                report_id = int(data.split('_')[3])
+            elif data_rep.startswith('report_add_cash_'):
+                report_id = int(data_rep.split('_')[3])
                 await self.add_cash_in(update, context, report_id)
                 
-            elif data.startswith('report_add_online_'):
-                report_id = int(data.split('_')[3])
+            elif data_rep.startswith('report_add_online_'):
+                report_id = int(data_rep.split('_')[3])
                 await self.add_online_cash(update, context, report_id)
                 
-            elif data.startswith('report_close_'):
-                report_id = int(data.split('_')[2])
+            elif data_rep.startswith('report_close_'):
+                report_id = int(data_rep.split('_')[2])
                 await self.close_report(update, context, report_id)
                 
-            elif data.startswith('report_history_'):
-                user_id = int(data.split('_')[2])
+            elif data_rep.startswith('report_history_'):
+                user_id = int(data_rep.split('_')[2])
                 await self.show_report_history(update, context, user_id)
                 
-            elif data.startswith('report_daily_summary'):
+            elif data_rep.startswith('report_daily_summary'):
                 await self.show_daily_summary(update, context)
                 
-            elif data.startswith('report_new_'):
-                user_id = int(data.split('_')[2])
+            elif data_rep.startswith('report_new_'):
+                user_id = int(data_rep.split('_')[2])
                 # Создаем фейковый update для обработки
                 fake_update = type('obj', (object,), {
                     'effective_user': type('obj', (object,), {'id': user_id}),
@@ -495,13 +480,13 @@ class ReportWatchManager:
                 })()
                 await self.start_new_report(fake_update, context)
             
-            elif data.startswith('report_continue_'):
-                report_id = int(data.split('_')[2])
+            elif data_rep.startswith('report_continue_'):
+                report_id = int(data_rep.split('_')[2])
                 context.user_data['active_report_id'] = report_id
                 await self.show_report(update, context, report_id)
                 
-            elif data.startswith('report_delete_'):
-                report_id = int(data.split('_')[2])
+            elif data_rep.startswith('report_delete_'):
+                report_id = int(data_rep.split('_')[2])
                 # Здесь можно добавить логику удаления отчета
                 await query.answer("Функция удаления в разработке", show_alert=True)
                 
@@ -557,7 +542,7 @@ class ReportWatchManager:
         keyboard = []
         if report['is_active']:
             keyboard.append([InlineKeyboardButton("➕ Добавить расход", callback_data=f"report_add_expense_{report_id}")])
-            keyboard.append([InlineKeyboardButton("💰 Внести приход", callback_data=f"report_add_cash_{report_id}")])
+            keyboard.append([InlineKeyboardButton("💰 Внести наличные", callback_data=f"report_add_cash_{report_id}")])
             keyboard.append([InlineKeyboardButton("💳 Безналичные", callback_data=f"report_add_online_{report_id}")])
             keyboard.append([InlineKeyboardButton("✅ Закрыть смену", callback_data=f"report_close_{report_id}")])
         
