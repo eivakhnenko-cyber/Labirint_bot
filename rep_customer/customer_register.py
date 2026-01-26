@@ -37,10 +37,12 @@ async def register_customer(update: Update, context: CallbackContext) -> None:
         reply_markup=get_cancel_keyboard(),
         parse_mode='Markdown'
     )
+    
 
 async def process_customer_registration(update: Update, context: CallbackContext) -> None:
     """Обработка регистрации клиента"""
     user_id = update.effective_user.id
+    
     if 'registering_customer' not in context.user_data:
         return
     

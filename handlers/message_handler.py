@@ -218,6 +218,7 @@ class MessageHandler:
             navigation_buttons = [
                 Buttons.GET_MY_BONUS,
                 Buttons.GET_MY_STAT,
+                Buttons.BACK_TO_MAIN,
                 Buttons.BACK_TO_CUSTOMERS
             ]
             
@@ -229,17 +230,17 @@ class MessageHandler:
                 elif text == Buttons.BACK_TO_CUSTOMERS:
                     await self.handlers['customers_menu'](update, context)
                 return True
+                    
             else:
                 await hand_cust_manager.handle_customer_selection(update, context)
                 return True
-        
+        #await self._cleanup_context(context)
         # Навигационные кнопки для результатов поиска
         if 'search_results' in user_data:
             navigation_buttons = [
                 Buttons.NEW_SEARCH,
                 Buttons.BACK_TO_CUSTOMERS
             ]
-            
             if text in navigation_buttons:
                 if text == Buttons.NEW_SEARCH:
                     await self.handlers['search_customer'](update, context)
@@ -252,11 +253,15 @@ class MessageHandler:
         
         return False
     
-    async def _cleanup_context(self, context: ContextTypes.DEFAULT_TYPE):
-        """Очистить контекст при возврате в главное меню"""
+    def cleanup_context(context):
+        """Статический метод для очистки контекста"""
         keys_to_remove = ['all_customers_list', 'search_results', 'searching_customer']
         for key in keys_to_remove:
             context.user_data.pop(key, None)
+
+    async def _cleanup_context(self, context: ContextTypes.DEFAULT_TYPE):
+        """Алиас для обратной совместимости"""
+        self.cleanup_context(context)
     
     async def _show_main_menu(self, update: Update, user_id: int):
         """Показать главное меню"""

@@ -109,7 +109,7 @@ class Router:
         
         # Подменю клиентов
         self._add_route(Buttons.REGISTER_CUSTOMER, "register_customer_handler")
-        self._add_route(Buttons.CUSTOMERS_LIST, "list_customers_handler")
+        self._add_route(Buttons.CUSTOMERS_LIST, "list_all_customers")
         self._add_route(Buttons.SEARCH_CUSTOMER, "search_customer_menu_handler")
         self._add_route(Buttons.ADD_PURCHASE, "add_purchase_handler")
         self._add_route(Buttons.ACTIVATE_CUSTOMER, "activate_customer")

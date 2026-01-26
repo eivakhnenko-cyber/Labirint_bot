@@ -386,7 +386,7 @@ async def search_customer_menu(update: Update, context: ContextTypes.DEFAULT_TYP
         parse_mode='Markdown'
     )
 
-async def list_customers_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def show_all_customers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Список клиентов"""
     # Используем вашу реальную функцию
     await list_all_customers(update, context)

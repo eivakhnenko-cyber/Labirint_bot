@@ -4,8 +4,12 @@ import logging
 
 from config.buttons import Buttons
 from rep_customer.customers import *
+from rep_customer.customer_register import process_customer_registration
+from rep_customer.customer_purchase import add_purchase
 from rep_customer.customers_inline import show_customer_details_inline
 from rep_customer.customer_manager_class import customer_manager
+from utils.telegram_utils import send_or_edit_message
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +26,6 @@ class HandCustManager:
         
     async def handle_customer_callback(self, update: Update, context: CallbackContext) -> None:
         """Обработчик inline-кнопок клиентов"""
-    
         query = update.callback_query
         
         try:
@@ -32,10 +35,12 @@ class HandCustManager:
             # 1. ЗАКРЫТЬ СПИСОК КЛИЕНТОВ
             if callback_data == CLOSE_CUSTOMER_LIST:
                 await query.edit_message_text("❌ Список закрыт")
+                context.user_data.pop('all_customers_list', None)
                 return
             
             # 2. ЗАКРЫТЬ ДЕТАЛИ
             elif callback_data == CLOSE_DETAILS:
+
                 await query.delete_message()
                 return
             
@@ -46,7 +51,7 @@ class HandCustManager:
                             context.user_data.get('search_results'))
                 
                 if customers:
-                    await show_customer_list(update, context, customers)
+                    await show_customer_list_inline(update, context, customers)
                 else:
                     await query.edit_message_text("❌ Список клиентов не найден")
                 return
@@ -54,9 +59,7 @@ class HandCustManager:
             # 4. ПРОСМОТР КЛИЕНТА
             elif callback_data.startswith(VIEW_CUSTOMER_PREFIX):
                 customer_id = int(callback_data.replace(VIEW_CUSTOMER_PREFIX, ""))
-                
-                # Получаем клиента из базы (нужен импорт вашего менеджера)
-                from rep_customer.customer_manager_class import customer_manager  # или ваш менеджер
+
                 customer = await customer_manager.find_customer_by_id(customer_id)
                 
                 if not customer:
@@ -80,15 +83,35 @@ class HandCustManager:
         
         if text == Buttons.BACK_TO_MAIN:
         # Очищаем контекст клиентов
-            context.user_data.pop('all_customers_list', None)
-            context.user_data.pop('search_results', None)
-            context.user_data.pop('searching_customer', None)
-        
-        # Возвращаемся в главное меню
-            from handlers.menus import back_to_main  # или ваш импорт
-            await back_to_main(update, context)
-            return
+            keys_to_remove = [
+            'all_customers_list', 
+            'search_results', 
+            'searching_customer', 
+            'registering_customer',
+            'last_searched_customer',
+            'checking_status'
+            ]
 
+            for key in keys_to_remove:
+                context.user_data.pop(key, None)
+            try:
+                from handlers.menus import back_to_main
+                await back_to_main(update, context)
+
+            except Exception as e:
+                self.logger.error(f"Ошибка возврата в главное меню: {e}")
+                await send_or_edit_message(
+                    update,
+                    "❌ Ошибка при возврате в главное меню.",
+                    reply_markup=ReplyKeyboardMarkup([[Buttons.BACK_TO_MAIN]], resize_keyboard=True)
+                )
+            return
+        # Если нет контекста клиентов - выходим, пусть другие хендлеры обрабатывают
+        has_customer_context = any(key in context.user_data for key in ['all_customers_list', 'search_results', 'searching_customer'])
+        
+        if not has_customer_context:
+            # Нет активного контекста клиентов - выходим
+            return
         # Проверяем навигационные кнопки
         if text == Buttons.SEARCH_CUSTOMER:
             await search_customer(update, context)
@@ -96,8 +119,11 @@ class HandCustManager:
         elif text == Buttons.BACK_TO_CUSTOMERS:
             await manage_customers(update, context)
             return
+        elif text == Buttons.REGISTER_CUSTOMER:
+            await process_customer_registration(update, context)
+            return
         elif text == Buttons.ADD_PURCHASE:
-            from rep_customer.customer_purchase import add_purchase
+
             await add_purchase(update, context)
             return
         elif text == Buttons.BACK_TO_SEARCH_RESULT or text == Buttons.BACK_TO_CUSTOMERS_LIST:
@@ -116,10 +142,8 @@ class HandCustManager:
         customers = None
         if 'search_results' in context.user_data:
             customers = context.user_data['search_results']
-            list_type = 'search'
         elif 'all_customers_list' in context.user_data:
             customers = context.user_data['all_customers_list']
-            list_type = 'all'
         else:
             await send_or_edit_message(
                 update,
@@ -212,7 +236,7 @@ class HandCustManager:
                             if search_results and len(search_results) == 1:
                                 await show_customer_details_inline(update, context, search_results[0])
                             elif search_results and len(search_results) > 1:
-                                await show_customer_list(update, context, search_results, customer_name)
+                                await show_customer_list_inline(update, context, search_results, customer_name)
                             else:
                                 await send_or_edit_message(
                                     update,
@@ -231,7 +255,7 @@ class HandCustManager:
                     if search_results and len(search_results) == 1:
                         await show_customer_details_inline(update, context, search_results[0])
                     elif search_results and len(search_results) > 1:
-                        await show_customer_list(update, context, search_results, text)
+                        await show_customer_list_inline(update, context, search_results, text)
                     else:
                         await send_or_edit_message(
                             update,

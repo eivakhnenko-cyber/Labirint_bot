@@ -23,8 +23,11 @@ from handlers.admin_roles import (
 )
 
 from rep_customer.customers import (
-    manage_customers, list_all_customers, show_my_stat, search_customer,
-    show_customer_list, show_customer_details, show_my_bonuses
+    list_all_customers, show_my_stat, search_customer,
+    show_customer_details, show_my_bonuses
+)
+from rep_customer.customers_inline import(
+    show_customer_list_inline
 )
 from handlers.handlers_customer import (
     hand_cust_manager, VIEW_CUSTOMER_PREFIX, 
@@ -81,7 +84,7 @@ from handlers.menus import (
     back_to_main, back_to_customers, back_to_bonus, back_to_admin,
     back_to_settings, back_to_chat, cleanup_menu,
     profile_info, activate_customer, deactivate_customer, create_program_handler, list_programs_handler,
-    register_customer_handler, list_customers_handler, search_customer_menu_handler,
+    register_customer_handler, show_all_customers, search_customer_menu_handler,
     add_purchase_handler, check_customer_status, tools_menu,
     search_by_card, search_by_phone, search_by_name, search_by_id,
     purchase_history, bot_settings_menu, notifications_menu, report_menu
@@ -211,16 +214,15 @@ def main():
 
          # ========== КЛИЕНТЫ ==========
         'customers_menu': customers_menu,  # Это вызовет вашу manage_customers функцию
-        'register_customer_handler': register_customer_handler,  # ✅
-        'list_customers_handler': list_customers_handler,        # ✅
+        'register_customer_handler': register_customer_handler,
         'search_customer_menu_handler': search_customer_menu_handler,
-        'add_purchase_handler': add_purchase_handler,            # ✅
+        'add_purchase_handler': add_purchase_handler,
         'register_customer': register_customer,
         'add_purchase': add_purchase,
-        'list_all_customers': list_all_customers,
+        'list_all_customers': show_all_customers,
         'show_my_stat': show_my_stat,
         'search_customer': search_customer,
-        'show_customer_list': show_customer_list,
+        'show_customer_list': show_customer_list_inline,
         'show_customer_details': show_customer_details,
         'show_my_bonuses': show_my_bonuses,
 

@@ -43,7 +43,8 @@ async def check_customer_status(update: Update, context: CallbackContext) -> Non
     role = await role_manager.get_user_role(user_id)
     
     if not role_manager.can_manage_customers(role):
-        await update.message.reply_text(
+        await send_or_edit_message(
+            update,
             "⛔ У вас нет прав для проверки статуса клиентов.",
             reply_markup=await get_main_keyboard(user_id)
         )
@@ -54,7 +55,8 @@ async def check_customer_status(update: Update, context: CallbackContext) -> Non
         'data': {}
     }
     
-    await update.message.reply_text(
+    await send_or_edit_message(
+        update,
         "🎯 *Проверка статуса клиента*\n\n"
         "Введите номер карты, телефон или ID клиента:",
         reply_markup=get_cancel_keyboard(),
@@ -253,90 +255,6 @@ async def show_customer_details(update: Update, context: CallbackContext, custom
             parse_mode='Markdown'
         )
 
-async def show_customer_list(update: Update, context: CallbackContext, customers: list, search_query: str = None) -> None:
-    """Показать список клиентов с inline-кнопками"""
-    
-    # Определяем, откуда пришел запрос
-    if update.callback_query:
-        query = update.callback_query
-        message = query.message
-        is_callback = True
-    else:
-        query = None
-        message = update.message
-        is_callback = False
-    
-    # Подготавливаем сообщение
-    if search_query:
-        message_text = f"🔍 *Найдено клиентов: {len(customers)}*\n"
-        message_text += f"*По запросу:* `{search_query}`\n\n"
-        list_key = 'search_results'
-    else:
-        message_text = "👥 *Список клиентов*\n\n"
-        message_text += f"*Всего клиентов:* {len(customers)}\n\n"
-        list_key = 'all_customers_list'
-    
-    # Создаем inline-клавиатуру
-    keyboard = []
-    
-    for i, customer in enumerate(customers, 1):
-        username = customer['username'][:20] + "..." if len(customer['username']) > 20 else customer['username']
-        
-        # Добавляем информацию о клиенте в текст
-        message_text += (
-            f"{i}. *{username}*\n"
-            f"   📱 {customer.get('phone_number', 'Нет телефона')}\n"
-            f"   💳 {customer.get('card_number', 'Нет карты')}\n"
-            f"   🆔 ID: {customer['customer_id']}\n"
-        )
-        
-        if customer.get('registration_date'):
-            try:
-                date_obj = datetime.strptime(customer['registration_date'], "%Y-%m-%d %H:%M:%S")
-                reg_date = date_obj.strftime("%d.%m.%Y")
-                message_text += f"   📅 {reg_date}\n"
-            except:
-                pass
-        
-        message_text += f"   💰 {customer.get('total_purchases', 0)} руб.\n\n"
-        
-        # Создаем inline-кнопку для клиента
-        button_text = f"👤 {customer['customer_id']}: {customer['username'][:15]}"
-        callback_data = f"view_customer_{customer['customer_id']}"
-        
-        keyboard.append([
-            InlineKeyboardButton(button_text, callback_data=callback_data)
-        ])
-    
-    # Добавляем кнопки навигации (обычные кнопки - отдельным сообщением)
-    # Для inline-сообщения оставляем только inline-кнопки клиентов
-    
-    # Кнопка отмены/назад
-    keyboard.append([
-        InlineKeyboardButton("❌ Закрыть", callback_data="close_customer_list")
-    ])
-    
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    # Отправляем или редактируем сообщение
-    if is_callback:
-        # Редактируем существующее inline-сообщение
-        await query.edit_message_text(
-            message_text,
-            parse_mode='Markdown',
-            reply_markup=reply_markup
-        )
-    else:
-        # Отправляем новое сообщение с inline-кнопками
-        await message.reply_text(
-            message_text,
-            parse_mode='Markdown',
-            reply_markup=reply_markup
-        )
-    
-    # Сохраняем список клиентов в контексте
-    context.user_data[list_key] = customers
-
 async def list_all_customers(update: Update, context: CallbackContext) -> None:
     """Показать всех клиентов с использованием inline-подхода"""
     user_id = update.effective_user.id
@@ -367,8 +285,8 @@ async def list_all_customers(update: Update, context: CallbackContext) -> None:
         
         # 3. Отдельно показываем обычные кнопки навигации
         await send_or_edit_message(
-            update,
-            "👇 *Используйте кнопки выше для выбора клиента, а эти для навигации:*",
+            update=update,
+            text="👇 *Используйте кнопки выше для выбора клиента, а эти для навигации:*",
             parse_mode='Markdown',
             reply_markup=await get_customers_main_keyboard()
         )

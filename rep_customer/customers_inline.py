@@ -5,6 +5,8 @@ import logging
 from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext
+from utils.telegram_utils import send_or_edit_message
+from config.buttons import Buttons
 
 logger = logging.getLogger(__name__)
 
@@ -46,18 +48,19 @@ async def show_customer_list_inline(update: Update, context: CallbackContext, cu
     keyboard = []
     
     for i, customer in enumerate(customers, 1):
-        username = customer['username'][:15] + "..." if len(customer['username']) > 15 else customer['username']
+        username = customer['username'][:20] + "..." if len(customer['username']) > 20 else customer['username']
         
         # Добавляем информацию в текст
-        message_text += f"{i}. *{username}*\n"
-        message_text += f"   📱 {customer.get('phone_number', 'Нет телефона')}\n"
-        message_text += f"   🆔 ID: {customer['customer_id']}\n"
+        message_text += (
+            f"{i}. *{username}*\n"
+            f"   📱 {customer.get('phone_number', 'Нет телефона')}\n"
+            f"   🆔 ID: {customer['customer_id']}\n"
+        )
+        message_text += "\n"
         
         if customer.get('total_purchases', 0) > 0:
             message_text += f"   💰 {customer['total_purchases']} руб.\n"
-        
-        message_text += "\n"
-        
+
         # Создаем inline-кнопку
         button_text = f"👤 {customer['customer_id']}: {username}"
         callback_data = f"{VIEW_CUSTOMER_PREFIX}{customer['customer_id']}"
@@ -68,27 +71,30 @@ async def show_customer_list_inline(update: Update, context: CallbackContext, cu
     
     # Добавляем кнопку закрытия
     keyboard.append([
-        InlineKeyboardButton("❌ Закрыть", callback_data=CLOSE_CUSTOMER_LIST)
+        InlineKeyboardButton(Buttons.CLOSE_CUSTOMER_LIST, callback_data=CLOSE_CUSTOMER_LIST)
     ])
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    # Сохраняем список в контексте
-    context.user_data[list_key] = customers
-    
+        # Сохраняем список в контексте
+    context.user_data[list_key] = customers 
+
     # Отправляем или редактируем сообщение
     if is_editing:
+#Редактируем существующее inline-сообщение
         await query.edit_message_text(
             message_text,
             parse_mode='Markdown',
             reply_markup=reply_markup
         )
     else:
+        # Отправляем новое сообщение с inline-кнопками
         await message.reply_text(
             message_text,
             parse_mode='Markdown',
             reply_markup=reply_markup
         )
+
 
 async def show_customer_details_inline(query: Update, context: CallbackContext, customer: dict) -> None:
     """Показать детали клиента с inline-кнопками действий"""

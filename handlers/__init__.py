@@ -39,7 +39,7 @@ from rep_customer.customers import (
     check_customer_status,
     search_customer,
     process_customer_search,
-    show_customer_list, show_customer_details, show_my_bonuses
+    show_customer_details, show_my_bonuses
 )
 from handlers.handlers_customer import (
     hand_cust_manager
