@@ -34,6 +34,9 @@ async def start(update: Update, context: CallbackContext) -> None:
         # Получаем или устанавливаем роль
         role = await role_manager.get_user_role(user_id)
         role_name = role_manager.get_role_name(role)
+
+        guest_text = ""
+        welcome_text = ""
         
         if role == UserRole.GUEST:
             guest_text = (
@@ -41,15 +44,22 @@ async def start(update: Update, context: CallbackContext) -> None:
                 f"👤 *Пользователь:* {user.first_name}\n"
                 f"📅 *Дата:* {datetime.now().strftime('%d.%m.%Y')}\n\n"
             )
-        elif role != UserRole.GUEST: 
+            welcome_text = guest_text
+        elif role == UserRole.VISITOR: 
+            guest_text = (
+                f"🏰 *Добро пожаловать в Labirint Coffee!* ☕\n\n"
+                f"👤 *Пользователь:* {user.first_name}\n"
+                f"📅 *Дата:* {datetime.now().strftime('%d.%m.%Y')}\n\n"
+            )
+            welcome_text = guest_text
+        elif role != UserRole.GUEST or UserRole.VISITOR: 
             welcome_text = (
                     f"👋 Привет, {user.first_name}!\n\n"
                     f"🤖 Я бот - твой друг и помощник Labirint coffee.\n"
                     f"🎭 Ваша роль: {role_name}\n\n"
                     f"Используйте кнопки меню для работы с функциями.\n"
                     f"Для просмотра вашей роли используйте команду /role"
-                )
-            
+                ) 
         elif role == UserRole.ADMIN:
         # Для администраторов добавляем информацию
                 welcome_text += (
@@ -76,11 +86,9 @@ async def start(update: Update, context: CallbackContext) -> None:
                 # Если не удалось отправить фото, отправляем текстовое приветствие
         # Если логотип не найден или не удалось отправить с ним
         if not message_sent:
+            final_text = guest_text if role == UserRole.GUEST or UserRole.VISITOR else welcome_text
             await update.message.reply_text(
-                f"🏰 *Добро пожаловать в Labirint Coffee!* ☕\n\n"
-                f"👤 *Пользователь:* {user.first_name}\n"
-                f"📅 *Дата:* {datetime.now().strftime('%d.%m.%Y')}\n\n"
-                f"{welcome_text}",
+                final_text,
                 parse_mode='Markdown',
                 reply_markup=await get_main_keyboard(user_id)
             )
