@@ -17,7 +17,6 @@ async def start(update: Update, context: CallbackContext) -> None:
         user_id = user.id
         logo_path = None
 
-
          # Устанавливаем персональные команды для пользователя
         await set_user_commands(update, context)
         # Проверяем разные форматы в разных папках
@@ -104,14 +103,3 @@ def check_and_show_logo():
     
     print("⚠️ Логотип не найден. Используется текстовая версия.")
     return None
-
-def show_default_logo():
-    """Показывает стандартный логотип"""
-    print("""
-    ┌─────────────────────────────────────┐
-    │                                     │
-    │        🏰 LABIRINT COFFEE 🏰        │
-    │            Version 1.0              │
-    │                                     │
-    └─────────────────────────────────────┘
-    """)

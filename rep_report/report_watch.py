@@ -22,6 +22,7 @@ class ReportWatchManager:
         user_info = await ReportWatchDB.get_user_info(user_id)
         if not user_info:
             await update.message.reply_text("❌ Не удалось получить данные пользователя")
+            logger.info(f"не удалось получить данные пользователя {user_info}")
             return
         
         # Проверяем активный отчет

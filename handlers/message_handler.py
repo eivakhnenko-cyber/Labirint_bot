@@ -91,13 +91,13 @@ class MessageHandler:
                 await self.handlers[handler_name](update, context)
             else:
                 logger.warning(f"Обработчик {handler_name} не найден в реестре")
-                await self._show_main_menu(update, user_id)
+                await self._show_main_menu(user_id)
         else:
             logger.error(f"Что то не то: {text}")
 
             # Неизвестная команда - показываем главное меню
             await self._cleanup_context(context)
-            await self._show_main_menu(update, user_id)
+            await self._show_main_menu(user_id)
     
     async def _check_active_processes(self, update: Update, context: ContextTypes.DEFAULT_TYPE, 
                                      text: str) -> bool:
@@ -263,12 +263,9 @@ class MessageHandler:
         """Алиас для обратной совместимости"""
         self.cleanup_context(context)
     
-    async def _show_main_menu(self, update: Update, user_id: int):
+    async def _show_main_menu(self, user_id: int):
         """Показать главное меню"""
-        await update.message.reply_text(
-            "Используйте кнопки меню:",
-            reply_markup=await get_main_keyboard(user_id)
-        )
+        await get_main_keyboard(user_id)
 
 # Фабрика для создания обработчика
 def create_message_handler(handlers_registry: dict):
