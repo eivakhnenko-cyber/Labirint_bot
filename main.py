@@ -88,7 +88,7 @@ from handlers.menus import (
     back_to_settings, back_to_chat, cleanup_menu,
     profile_info, activate_customer, deactivate_customer, create_program_handler, list_programs_handler,
     register_customer_handler, show_all_customers,
-    add_purchase_handler, check_customer_status, tools_menu,
+    add_purchase_handler, tools_menu,
     search_by_card, search_by_phone, search_by_name, search_by_id,
     purchase_history, bot_settings_menu, notifications_menu, report_menu
 )
