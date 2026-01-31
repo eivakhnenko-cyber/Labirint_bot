@@ -62,10 +62,6 @@ async def show_all_roles(update: Update, context: CallbackContext) -> None:
                 role_name = role_info.get('role_name', role_info.get('role', 'Неизвестно'))
                 permissions_count = role_info.get('permission_count', 0)
                 
-                # Используем экранирование для безопасного форматирования
-                #safe_role_name = role_name.replace('*', '\\*').replace('_', '\\_').replace('`', '\\`')
-                #message += f"*{safe_role_name}* ({role_info.get('role', 'N/A')})\n"
-
                 # Экранируем спецсимволы для MarkdownV2
                 safe_role_name = role_manager.escape_markdown_v2(role_name)
                 safe_role_value = role_manager.escape_markdown_v2(role_info.get('role', 'N/A'))
@@ -78,7 +74,6 @@ async def show_all_roles(update: Update, context: CallbackContext) -> None:
                     message += f"  • Ключевые функции: "
                     key_perms = role_info['permissions'][:3]  # Показываем только первые 3
                     # Экранируем названия разрешений
-                    #safe_perms = [p.replace('*', '\\*').replace('_', '\\_').replace('`', '\\`') for p in key_perms]
                     safe_perms = [role_manager.escape_markdown_v2(p) for p in key_perms]
                     message += ', '.join(safe_perms)
 
@@ -94,9 +89,6 @@ async def show_all_roles(update: Update, context: CallbackContext) -> None:
                 role_name = role_manager.get_role_name(role)
                 permissions = role_manager.get_role_permissions(role)
                 
-                # Экранируем спецсимволы в названии роли
-                #safe_role_name = role_name.replace('*', '\\*').replace('_', '\\_').replace('`', '\\`')
-                #message += f"*{safe_role_name}* ({role.value})\n"
                 safe_role_name = role_manager.escape_markdown_v2(role_name)
                 safe_role_value = role_manager.escape_markdown_v2(role.value)
                 
@@ -106,8 +98,7 @@ async def show_all_roles(update: Update, context: CallbackContext) -> None:
                 # Показываем ключевые разрешения
                 if permissions:
                     key_perms = [p.value for p in permissions[:3]]
-                     # Экранируем названия разрешений
-                    #safe_perms = [p.replace('*', '\\*').replace('_', '\\_').replace('`', '\\`') for p in key_perms]
+                    # Экранируем названия разрешений
                     safe_perms = [role_manager.escape_markdown_v2(p) for p in key_perms]
                     message += f"  • Ключевые функции: {', '.join(safe_perms)}"
                     if len(permissions) > 3:

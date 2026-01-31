@@ -6,17 +6,22 @@ from config.buttons import Buttons
 from rep_customer.customers import *
 from rep_customer.customer_register import process_customer_registration
 from rep_customer.customer_purchase import add_purchase
-from rep_customer.customers_inline import show_customer_details_inline
+from rep_customer.customer_search import search_manager
+from rep_customer.customers_inline import (
+    show_customer_details_inline, CLOSE_CUSTOMER_LIST,
+    BACK_TO_LIST, CLOSE_DETAILS, handle_close_customer_list,
+    handle_close_details, VIEW_CUSTOMER_PREFIX
+)
 from rep_customer.customer_manager_class import customer_manager
 from utils.telegram_utils import send_or_edit_message
 
 
 logger = logging.getLogger(__name__)
 
-VIEW_CUSTOMER_PREFIX = "view_customer_"
-CLOSE_CUSTOMER_LIST = "close_customer_list"
-BACK_TO_LIST = "back_to_customer_list"
-CLOSE_DETAILS = "close_details"
+# VIEW_CUSTOMER_PREFIX = "view_customer_"
+# CLOSE_CUSTOMER_LIST = "close_customer_list"
+# BACK_TO_LIST = "back_to_customer_list"
+# CLOSE_DETAILS = "close_details"
 
 class HandCustManager:
     """Обработчики с функционалом Клиентов"""
@@ -34,13 +39,14 @@ class HandCustManager:
             
             # 1. ЗАКРЫТЬ СПИСОК КЛИЕНТОВ
             if callback_data == CLOSE_CUSTOMER_LIST:
-                await query.edit_message_text("❌ Список закрыт")
+                await handle_close_customer_list(update, context)
+                # await query.edit_message_text("❌ Список закрыт")
                 context.user_data.pop('all_customers_list', None)
                 return
             
             # 2. ЗАКРЫТЬ ДЕТАЛИ
             elif callback_data == CLOSE_DETAILS:
-
+                await handle_close_details(update, context)
                 await query.delete_message()
                 return
             
@@ -53,13 +59,25 @@ class HandCustManager:
                 if customers:
                     await show_customer_list_inline(update, context, customers)
                 else:
-                    await query.edit_message_text("❌ Список клиентов не найден")
+                    #await query.edit_message_text("❌ Список клиентов не найден")
+                    try:
+                        await query.edit_message_text(
+                            "❌ Список клиентов не найден",
+                            reply_markup=InlineKeyboardMarkup([
+                                [InlineKeyboardButton("🔍 Новый поиск", callback_data="search_again")]
+                            ])
+                        )
+                    except Exception as e:
+                            self.logger.warning(f"Не удалось редактировать сообщение: {e}")
+                            await query.message.reply_text(
+                                "❌ Список клиентов не найден. Начните поиск заново.",
+                                reply_markup=await get_customers_main_keyboard()
+                            )
                 return
             
             # 4. ПРОСМОТР КЛИЕНТА
             elif callback_data.startswith(VIEW_CUSTOMER_PREFIX):
                 customer_id = int(callback_data.replace(VIEW_CUSTOMER_PREFIX, ""))
-
                 customer = await customer_manager.find_customer_by_id(customer_id)
                 
                 if not customer:
@@ -72,7 +90,10 @@ class HandCustManager:
             try:
                 await query.edit_message_text("❌ Ошибка при обработке запроса")
             except:
-                pass
+                try:
+                    await query.message.reply_text("❌ Ошибка при обработке запроса")
+                except:
+                    pass
 
     async def handle_customer_selection(self, update: Update, context: CallbackContext) -> None:
         """Обработка выбора клиента из списка"""
@@ -114,7 +135,7 @@ class HandCustManager:
             return
         # Проверяем навигационные кнопки
         if text == Buttons.SEARCH_CUSTOMER:
-            await search_customer(update, context)
+            await search_manager.search_customer_menu(update, context)
             return
         elif text == Buttons.BACK_TO_CUSTOMERS:
             await manage_customers(update, context)

@@ -44,9 +44,12 @@ from handlers.handlers_bonus_levels import (
 
 from rep_customer.customers import (
     manage_customers, 
-    list_all_customers, check_customer_status, show_my_stat, show_my_bonuses
+    list_all_customers, show_my_stat, show_my_bonuses
 )
 
+from rep_customer.customer_search import (
+    search_manager
+)
 from rep_customer.customer_register import (
     register_customer
 )
@@ -268,12 +271,11 @@ async def report_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=await get_main_report_keyboard(),
         parse_mode='Markdown'
     )
+
 # ========== БОНУСНАЯ СИСТЕМА - ПОДМЕНЮ ==========
 
 async def loyalty_program_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Меню программы лояльности"""
-    user_id = update.effective_user.id
-
     await update.message.reply_text(
         "🎁 *Программа лояльности*\n\nВыберите действие:",
         reply_markup=await get_loyalty_program_keyboard(),
@@ -301,7 +303,9 @@ async def promocodes_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=await get_promocodes_keyboard(),
         parse_mode='Markdown'
     )
+
 # ========== РЕАЛЬНЫЕ ОБРАБОТЧИКИ БОНУСНОЙ СИСТЕМЫ ==========
+
 async def create_program_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Создание бонусной программы - реальный обработчик"""
     # Используем вашу реальную функцию
@@ -379,7 +383,6 @@ async def register_customer_handler(update: Update, context: ContextTypes.DEFAUL
 
 async def search_customer_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Меню поиска клиента"""
-    user_id = update.effective_user.id
     await update.message.reply_text(
         "🔍 *Поиск клиента*\n\nВыберите тип поиска:",
         reply_markup=await get_customer_search_keyboard(),
@@ -390,15 +393,6 @@ async def show_all_customers(update: Update, context: ContextTypes.DEFAULT_TYPE)
     """Список клиентов"""
     # Используем вашу реальную функцию
     await list_all_customers(update, context)
-
-async def search_customer_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Меню поиска клиента"""
-    user_id = update.effective_user.id
-    await update.message.reply_text(
-        "🔍 *Поиск клиента*\n\nВыберите тип поиска:",
-        reply_markup=await get_customer_search_keyboard(),
-        parse_mode='Markdown'
-    )
 
 async def add_purchase_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начисление покупки"""
@@ -414,19 +408,19 @@ async def show_my_stat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def search_by_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Поиск по карте"""
-    await update.message.reply_text("Функция поиска по карте в разработке")
+    await search_manager.search_cust_by_card(update, context)
 
 async def search_by_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Поиск по телефону"""
-    await update.message.reply_text("Функция поиска по телефону в разработке")
+    await search_manager.search_cust_by_phone(update, context)
 
 async def search_by_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Поиск по имени"""
-    await update.message.reply_text("Функция поиска по имени в разработке")
+    await search_manager.search_cust_by_name(update, context)
 
 async def search_by_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Поиск по ID"""
-    await update.message.reply_text("Функция поиска по ID в разработке")
+    await search_manager.search_cust_by_id(update, context)
 
 async def purchase_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """История покупок"""
@@ -460,7 +454,6 @@ async def back_to_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def back_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Вернуться к администрированию"""
-    user_id = update.effective_user.id
     await update.message.reply_text(
         "⚙️ *Администрирование*",
         reply_markup=await get_admin_keyboard()

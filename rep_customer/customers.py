@@ -5,11 +5,11 @@ from telegram.ext import CallbackContext
 from datetime import datetime
 from config.buttons import Buttons
 from keyboards.bonus_keyb import *
-from keyboards.customeers_keyb import get_customers_main_keyboard
+from keyboards.customeers_keyb import get_customers_main_keyboard, get_customers_purch_keyboard,get_customer_search_keyboard
 from keyboards.global_keyb import get_cancel_keyboard, get_main_keyboard
 from .customer_manager_class import customer_manager
 from .customer_purchase_class import customer_purchase
-from .customers_inline import show_customer_list_inline
+from .customers_inline import show_customer_list_inline, is_inline_mode_active
 from utils.telegram_utils import send_or_edit_message
 from handlers.admin_roles_class import role_manager
 
@@ -20,7 +20,16 @@ async def manage_customers(update: Update, context: CallbackContext) -> None:
     """Меню управления клиентами"""
     user_id = update.effective_user.id
     role = await role_manager.get_user_role(user_id)
-    
+    # ПРОВЕРКА: если активен inline-режим, показываем предупреждение
+    if is_inline_mode_active(context):
+        await send_or_edit_message(
+            update,
+            "⚠️ У вас открыт список клиентов.\n"
+            "Закройте его, используя кнопку '❌ Закрыть' вверху, прежде чем выбрать другое действие.",
+            reply_markup=None
+        )
+        return  # ВЫХОДИМ!
+
     if not role_manager.can_manage_customers(role):
         await send_or_edit_message(
             update,
@@ -62,86 +71,6 @@ async def check_customer_status(update: Update, context: CallbackContext) -> Non
         reply_markup=get_cancel_keyboard(),
         parse_mode='Markdown'
     )
-
-async def search_customer(update: Update, context: CallbackContext) -> None:
-    """Начать поиск клиента"""
-    user_id = update.effective_user.id
-    role = await role_manager.get_user_role(user_id)
-    
-    if not role_manager.can_manage_customers(role):
-        await send_or_edit_message(
-            update,
-            "⛔ У вас нет прав для поиска клиентов.",
-            reply_markup=await get_main_keyboard(user_id)
-        )
-        return
-    
-    context.user_data['searching_customer'] = {
-        'step': 'search_input',
-        'data': {}
-    }
-    
-    await send_or_edit_message(
-        update,
-        "🔍 *Поиск клиента*\n\n"
-        "Введите:\n"
-        "• Номер карты (например: LBC-1234-5678-9012)\n"
-        "• Номер телефона\n"
-        "• Имя клиента\n\n"
-        "Или введите '❌ Отмена' для выхода",
-        reply_markup=get_cancel_keyboard(),
-        parse_mode='Markdown'
-    )
-
-async def process_customer_search(update: Update, context: CallbackContext) -> None:
-    """Обработка поиска клиента с использованием inline-подхода"""
-    if 'searching_customer' not in context.user_data:
-        return
-    
-    text = update.message.text.strip()
-    user_id = update.effective_user.id
-    
-    if text == Buttons.CANCEL:
-        del context.user_data['searching_customer']
-        await send_or_edit_message(
-            update,
-            "❌ Поиск отменен.",
-            reply_markup=await get_customers_main_keyboard()
-        )
-        return
-    
-    try:
-        # Используем CustomerManager для поиска
-        customers = await customer_manager.find_customers_by_search_query(text)
-        
-        if not customers:
-            await send_or_edit_message(
-                update,
-                "❌ Клиенты не найдены. Попробуйте другой запрос:",
-                reply_markup=get_cancel_keyboard()
-            )
-            return
-        
-        del context.user_data['searching_customer']
-        
-        # Используем inline-подход для отображения результатов
-        await show_customer_list_inline(update, context, customers, search_query=text)
-        
-        # Дополнительно показываем обычную клавиатуру для навигации
-        await send_or_edit_message(
-            update,
-            "👇 *Используйте кнопки выше для выбора клиента, а эти для навигации:*",
-            parse_mode='Markdown',
-            reply_markup=await get_customers_main_keyboard()
-        )
-            
-    except Exception as e:
-        logger.error(f"Ошибка поиска клиента: {e}")
-        await send_or_edit_message(
-            update,
-            "❌ Ошибка при поиске клиента. Попробуйте позже.",
-            reply_markup=await get_customers_main_keyboard()
-        )
 
 async def show_customer_details(update: Update, context: CallbackContext, customer: dict) -> None:
     """Показать детальную информацию о клиенте"""
@@ -267,7 +196,14 @@ async def list_all_customers(update: Update, context: CallbackContext) -> None:
             reply_markup=await get_main_keyboard(user_id)
         )
         return
-    
+    if is_inline_mode_active(context):
+        await send_or_edit_message(
+            update,
+            "⚠️ У вас уже открыт список клиентов.\n"
+            "Закройте его, используя кнопку '❌ Закрыть' вверху.",
+            reply_markup=None  # Не показываем клавиатуру
+        )
+        return
     try:
         # 1. Получаем клиентов с await
         customers = await customer_manager.get_all_customers()
@@ -282,14 +218,7 @@ async def list_all_customers(update: Update, context: CallbackContext) -> None:
         
         # 2. Показываем inline-сообщение со списком клиентов
         await show_customer_list_inline(update, context, customers)
-        
-        # 3. Отдельно показываем обычные кнопки навигации
-        await send_or_edit_message(
-            update=update,
-            text="👇 *Используйте кнопки выше для выбора клиента, а эти для навигации:*",
-            parse_mode='Markdown',
-            reply_markup=await get_customers_main_keyboard()
-        )
+            
         
     except Exception as e:
         logger.error(f"Ошибка получения списка клиентов: {e}")

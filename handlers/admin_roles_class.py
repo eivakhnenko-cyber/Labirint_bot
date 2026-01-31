@@ -266,6 +266,7 @@ class RoleManager:
                 'can_manage_customers': self.can_manage_customers(role),
                 'can_manage_inventory': self.can_manage_inventory(role),
                 'can_view_reports': self.can_view_reports(role),
+                'can_manage_reports': self.can_manage_reports(role),
                 'can_manage_reminds': self.can_manage_reminds(role),
                 'can_manage_users': self.can_manage_users(role),
                 'can_manage_system': self.can_manage_system(role)
@@ -321,6 +322,10 @@ class RoleManager:
     def can_manage_reminds(self, role: UserRole) -> bool:
         """Проверяет, может ли управлять напоминаниями"""
         return role in [UserRole.ADMIN, UserRole.MANAGER, UserRole.BARISTA]
+    
+    def can_manage_reports(self, role: UserRole) -> bool:
+        """Проверяет, может ли роль упрвлять отчетами"""
+        return role in [UserRole.MANAGER, UserRole.BARISTA]
 # ====================================================================
 # ГЛОБАЛЬНЫЙ ЭКЗЕМПЛЯР МЕНЕДЖЕРА РОЛЕЙ
 # Импортируется в другие модули для проверки прав

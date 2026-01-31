@@ -5,9 +5,7 @@
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes
-
 from router import router
-
 from keyboards.global_keyb import get_main_keyboard
 from handlers.cleanup import handle_cleanup_confirmation, handle_message_count_input
 from handlers.reminders import (
@@ -27,7 +25,6 @@ from handlers.handlers_customer import (
     hand_cust_manager
 )
 from rep_customer.customers import (
-    process_customer_search,
     show_my_bonuses, check_customer_status
 )
 from rep_customer.customer_purchase import (
@@ -37,6 +34,9 @@ from rep_customer.customer_register import (
     process_customer_registration
 )
 from rep_customer.customer_register_class import customer_register
+from rep_customer.customer_search import (
+    search_manager
+)
 
 from rep_invent.inventory import process_item_input, _process_unit
 
@@ -114,7 +114,7 @@ class MessageHandler:
             ('awaiting_generate_card', customer_register.generate_card_number),
             ('check_customer_status', check_customer_status),
             ('adding_purchase', process_purchase),
-            ('searching_customer', process_customer_search),
+            ('searching_customer', search_manager.process_customer_search),
             ('show_my_bonuses', show_my_bonuses),
 
             # Процессы работы с бонусной системой

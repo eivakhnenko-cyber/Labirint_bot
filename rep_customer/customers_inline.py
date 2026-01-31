@@ -7,6 +7,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext
 from utils.telegram_utils import send_or_edit_message
 from config.buttons import Buttons
+from keyboards.customeers_keyb import get_customers_main_keyboard
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,31 @@ VIEW_BONUSES_PREFIX = "bonuses_"
 CLOSE_CUSTOMER_LIST = "close_customer_list"
 BACK_TO_LIST = "back_to_customer_list"
 CLOSE_DETAILS = "close_details"
+INLINE_MODE_KEY = 'inline_mode_active'
+
+def set_inline_mode_active(context: CallbackContext, is_active: bool = True):
+    """Установить статус inline-режима"""
+    context.user_data[INLINE_MODE_KEY] = is_active
+
+def is_inline_mode_active(context: CallbackContext) -> bool:
+    """Проверить активен ли inline-режим"""
+    return context.user_data.get(INLINE_MODE_KEY, False)
+
+async def hide_navigation_keyboard_if_inline_active(update: Update, context: CallbackContext) -> bool:
+    """
+    Проверяет, активен ли inline-режим и скрывает клавиатуру навигации.
+    Возвращает True если inline-режим активен (клавиатура скрыта)
+    """
+    if is_inline_mode_active(context):
+        # Отправляем пустое сообщение без клавиатуры (скрываем предыдущую)
+        await send_or_edit_message(
+            update,
+            "",
+            reply_markup=None,  # Убираем клавиатуру
+            delete_previous=True  # Если ваша функция send_or_edit_message поддерживает
+        )
+        return True
+    return False
 
 async def show_customer_list_inline(update: Update, context: CallbackContext, customers: list, search_query: str = None) -> None:
     """
@@ -79,9 +105,12 @@ async def show_customer_list_inline(update: Update, context: CallbackContext, cu
         # Сохраняем список в контексте
     context.user_data[list_key] = customers 
 
+    # Устанавливаем флаг inline-режима
+    set_inline_mode_active(context, True)
+
     # Отправляем или редактируем сообщение
     if is_editing:
-#Редактируем существующее inline-сообщение
+    #Редактируем существующее inline-сообщение
         await query.edit_message_text(
             message_text,
             parse_mode='Markdown',
@@ -150,3 +179,93 @@ async def show_customer_details_inline(query: Update, context: CallbackContext, 
             parse_mode='Markdown',
             reply_markup=keyboard
         )
+
+async def handle_close_customer_list(self, update: Update, context: CallbackContext):
+    """Обработчик закрытия списка клиентов"""
+    query = update.callback_query
+    
+    try:
+        await query.answer()
+        
+        # Сначала сбрасываем флаг inline-режима
+        set_inline_mode_active(context, False)
+        
+        # Очищаем данные списка
+        if 'search_results' in context.user_data:
+            del context.user_data['search_results']
+        if 'all_customers_list' in context.user_data:
+            del context.user_data['all_customers_list']
+        
+        # Пытаемся удалить сообщение
+        try:
+            await query.delete_message()
+        except Exception as e:
+            self.logger.warning(f"Не удалось удалить сообщение: {e}")
+            # Пытаемся редактировать сообщение
+            try:
+                await query.edit_message_text(
+                    "❌ Список закрыт",
+                    reply_markup=None
+                )
+            except Exception as e2:
+                self.logger.warning(f"Не удалось редактировать сообщение: {e2}")
+                # Просто выходим если сообщение уже удалено
+        
+        # Показываем клавиатуру навигации в новом сообщении
+        await query.message.reply_text(
+            "📋 Список клиентов закрыт.\nВыберите действие:",
+            reply_markup=await get_customers_main_keyboard()
+        )
+        
+    except Exception as e:
+        self.logger.error(f"Ошибка закрытия списка клиентов: {e}")
+        # Все равно показываем основное меню
+        try:
+            await query.message.reply_text(
+                "📋 Возврат в меню клиентов.\nВыберите действие:",
+                reply_markup=await get_customers_main_keyboard()
+            )
+        except:
+            pass
+
+async def handle_close_details(self, update: Update, context: CallbackContext):
+    """Обработчик закрытия деталей клиента"""
+    query = update.callback_query
+    
+    try:
+        await query.answer()
+        
+        # Сбрасываем флаг inline-режима
+        set_inline_mode_active(context, False)
+        
+        # Пытаемся удалить сообщение
+        try:
+            await query.delete_message()
+        except Exception as e:
+            self.logger.warning(f"Не удалось удалить детали: {e}")
+            # Пытаемся редактировать сообщение
+            try:
+                await query.edit_message_text(
+                    "❌ Детали закрыты",
+                    reply_markup=None
+                )
+            except Exception as e2:
+                self.logger.warning(f"Не удалось редактировать детали: {e2}")
+                # Просто выходим если сообщение уже удалено
+        
+        # Показываем клавиатуру навигации в новом сообщении
+        await query.message.reply_text(
+            "👤 Детали клиента закрыты.\nВыберите действие:",
+            reply_markup=await get_customers_main_keyboard()
+        )
+        
+    except Exception as e:
+        self.logger.error(f"Ошибка закрытия деталей клиента: {e}")
+        # Все равно показываем основное меню
+        try:
+            await query.message.reply_text(
+                "👤 Возврат в меню клиентов.\nВыберите действие:",
+                reply_markup=await get_customers_main_keyboard()
+            )
+        except:
+            pass

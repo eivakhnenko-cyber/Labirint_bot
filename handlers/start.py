@@ -41,18 +41,19 @@ async def start(update: Update, context: CallbackContext) -> None:
         if role == UserRole.GUEST:
             guest_text = (
                 f"🏰 *Добро пожаловать в Labirint Coffee!* ☕\n\n"
-                f"👤 *Пользователь:* {user.first_name}\n"
+                f"👤 *Гость:* {user.first_name}\n"
                 f"📅 *Дата:* {datetime.now().strftime('%d.%m.%Y')}\n\n"
+                f"На текущий момент вы не зарегистрированы, вы можете обратиться к сотрудникам нашей компании."
             )
             welcome_text = guest_text
         elif role == UserRole.VISITOR: 
             guest_text = (
                 f"🏰 *Добро пожаловать в Labirint Coffee!* ☕\n\n"
-                f"👤 *Пользователь:* {user.first_name}\n"
+                f"👤 *Клиент:* {user.first_name}\n"
                 f"📅 *Дата:* {datetime.now().strftime('%d.%m.%Y')}\n\n"
             )
             welcome_text = guest_text
-        elif role != UserRole.GUEST or UserRole.VISITOR: 
+        elif role == UserRole.MANAGER: 
             welcome_text = (
                     f"👋 Привет, {user.first_name}!\n\n"
                     f"🤖 Я бот - твой друг и помощник Labirint coffee.\n"
@@ -60,6 +61,14 @@ async def start(update: Update, context: CallbackContext) -> None:
                     f"Используйте кнопки меню для работы с функциями.\n"
                     f"Для просмотра вашей роли используйте команду /role"
                 ) 
+        elif role == UserRole.BARISTA:
+             welcome_text = (
+                    f"👋 Привет, {user.first_name}!\n\n"
+                    f"🤖 Я бот - твой друг и помощник Labirint coffee.\n"
+                    f"🎭 Ваша роль: {role_name}\n\n"
+                    f"Используйте кнопки меню для работы с функциями.\n"
+                    f"Для просмотра вашей роли используйте команду /role"
+                )
         elif role == UserRole.ADMIN:
         # Для администраторов добавляем информацию
                 welcome_text += (
@@ -69,6 +78,16 @@ async def start(update: Update, context: CallbackContext) -> None:
                       f"/stats - статистика системы\n"
                       f"/setrole <id> <role> - изменить роль"
                     )
+        else:
+             # На всякий случай дефолтный текст
+            welcome_text = (
+                f"👋 Привет, {user.first_name}!\n\n"
+                f"🏰 *Добро пожаловать в Labirint Coffee!* ☕\n"
+               
+                f"🎭 Ваша роль: {role_name}\n\n"
+                f"На текущий момент вы не зарегистрированы, вы можете обратиться к сотрудникам нашей компании."
+            )
+
         message_sent = False
 
         if logo_path and logo_path.exists():
@@ -76,7 +95,7 @@ async def start(update: Update, context: CallbackContext) -> None:
                 with open(logo_path, 'rb') as photo:
                     await update.message.reply_photo(
                         photo=photo,
-                        caption=guest_text,
+                        caption=welcome_text,
                         parse_mode='Markdown',
                         reply_markup=await get_main_keyboard(user_id)
                     )
@@ -86,9 +105,8 @@ async def start(update: Update, context: CallbackContext) -> None:
                 # Если не удалось отправить фото, отправляем текстовое приветствие
         # Если логотип не найден или не удалось отправить с ним
         if not message_sent:
-            final_text = guest_text if role == UserRole.GUEST or UserRole.VISITOR else welcome_text
             await update.message.reply_text(
-                final_text,
+                welcome_text,
                 parse_mode='Markdown',
                 reply_markup=await get_main_keyboard(user_id)
             )
