@@ -216,6 +216,9 @@ async def list_all_customers(update: Update, context: CallbackContext) -> None:
             )
             return
         
+         # 2. Скрываем навигационную клавиатуру перед показом inline-списка
+        from rep_customer.customers_inline import hide_navigation_keyboard_if_inline_active
+        await hide_navigation_keyboard_if_inline_active(update, context)
         # 2. Показываем inline-сообщение со списком клиентов
         await show_customer_list_inline(update, context, customers)
             

@@ -150,6 +150,10 @@ class SearchManager:
             if isinstance(customers, dict):
                 customers = [customers]
             
+            # Перед показом результатов поиска добавьте:
+            from rep_customer.customers_inline import hide_navigation_keyboard_if_inline_active
+            await hide_navigation_keyboard_if_inline_active(update, context)
+
             # Используем inline-подход для отображения результатов
             await show_customer_list_inline(update, context, customers, search_query=text)
             

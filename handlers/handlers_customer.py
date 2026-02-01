@@ -39,10 +39,10 @@ class HandCustManager:
             
             # 1. ЗАКРЫТЬ СПИСОК КЛИЕНТОВ
             if callback_data == CLOSE_CUSTOMER_LIST:
+                #context.user_data.pop('all_customers_list', None)
                 await handle_close_customer_list(update, context)
                 # await query.edit_message_text("❌ Список закрыт")
-                context.user_data.pop('all_customers_list', None)
-                return
+                #return
             
             # 2. ЗАКРЫТЬ ДЕТАЛИ
             elif callback_data == CLOSE_DETAILS:
@@ -115,6 +115,11 @@ class HandCustManager:
 
             for key in keys_to_remove:
                 context.user_data.pop(key, None)
+
+            # Также сбрасываем inline-режим
+            from rep_customer.customers_inline import set_inline_mode_active
+            set_inline_mode_active(context, False)
+            
             try:
                 from handlers.menus import back_to_main
                 await back_to_main(update, context)

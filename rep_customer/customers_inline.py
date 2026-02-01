@@ -3,7 +3,7 @@
 """
 import logging
 from datetime import datetime
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import CallbackContext
 from utils.telegram_utils import send_or_edit_message
 from config.buttons import Buttons
@@ -35,16 +35,44 @@ async def hide_navigation_keyboard_if_inline_active(update: Update, context: Cal
     Проверяет, активен ли inline-режим и скрывает клавиатуру навигации.
     Возвращает True если inline-режим активен (клавиатура скрыта)
     """
-    if is_inline_mode_active(context):
-        # Отправляем пустое сообщение без клавиатуры (скрываем предыдущую)
-        await send_or_edit_message(
-            update,
-            "",
-            reply_markup=None,  # Убираем клавиатуру
-            delete_previous=True  # Если ваша функция send_or_edit_message поддерживает
-        )
+    logger.info(f"Начало скрытия клавиатуры")
+    
+    try:
+        # Устанавливаем флаг inline-режима
+        set_inline_mode_active(context, True)
+        
+        # Отправляем новое сообщение с пустой клавиатурой
+        # Это скроет предыдущую клавиатуру
+        if update.message:
+            await update.message.reply_text(
+                "⬇️",  # Невидимый символ (zero-width space)
+                reply_markup=ReplyKeyboardRemove()  # ← Важно! Используем ReplyKeyboardRemove
+            )
+            logger.info("Отправили сообщение с ReplyKeyboardRemove")
+        elif update.callback_query:
+            await update.callback_query.message.reply_text(
+                "⬇️",
+                reply_markup=ReplyKeyboardRemove()
+            )
+        
         return True
-    return False
+        
+    except Exception as e:
+        logger.error(f"Ошибка скрытия клавиатуры: {e}")
+        set_inline_mode_active(context, True)
+        return True
+    #     # Отправляем пустое сообщение без клавиатуры (скрываем предыдущую)
+    #     await send_or_edit_message(
+    #         update,
+    #         "_",  # Пустое сообщение
+    #         reply_markup=None  # Убираем клавиатуру
+    #     )
+    #     # Устанавливаем флаг inline-режима
+    #     set_inline_mode_active(context, True)
+    #     return True
+    # except Exception as e:
+    #     logger.warning(f"Не удалось скрыть клавиатуру: {e}")
+    #     return False
 
 async def show_customer_list_inline(update: Update, context: CallbackContext, customers: list, search_query: str = None) -> None:
     """
@@ -106,7 +134,7 @@ async def show_customer_list_inline(update: Update, context: CallbackContext, cu
     context.user_data[list_key] = customers 
 
     # Устанавливаем флаг inline-режима
-    set_inline_mode_active(context, True)
+    #set_inline_mode_active(context, True)
 
     # Отправляем или редактируем сообщение
     if is_editing:
@@ -180,7 +208,7 @@ async def show_customer_details_inline(query: Update, context: CallbackContext, 
             reply_markup=keyboard
         )
 
-async def handle_close_customer_list(self, update: Update, context: CallbackContext):
+async def handle_close_customer_list(update: Update, context: CallbackContext) -> None:
     """Обработчик закрытия списка клиентов"""
     query = update.callback_query
     
@@ -200,7 +228,7 @@ async def handle_close_customer_list(self, update: Update, context: CallbackCont
         try:
             await query.delete_message()
         except Exception as e:
-            self.logger.warning(f"Не удалось удалить сообщение: {e}")
+            logger.warning(f"Не удалось удалить сообщение: {e}")
             # Пытаемся редактировать сообщение
             try:
                 await query.edit_message_text(
@@ -208,7 +236,7 @@ async def handle_close_customer_list(self, update: Update, context: CallbackCont
                     reply_markup=None
                 )
             except Exception as e2:
-                self.logger.warning(f"Не удалось редактировать сообщение: {e2}")
+                logger.warning(f"Не удалось редактировать сообщение: {e2}")
                 # Просто выходим если сообщение уже удалено
         
         # Показываем клавиатуру навигации в новом сообщении
@@ -218,7 +246,7 @@ async def handle_close_customer_list(self, update: Update, context: CallbackCont
         )
         
     except Exception as e:
-        self.logger.error(f"Ошибка закрытия списка клиентов: {e}")
+        logger.error(f"Ошибка закрытия списка клиентов: {e}")
         # Все равно показываем основное меню
         try:
             await query.message.reply_text(
@@ -228,7 +256,7 @@ async def handle_close_customer_list(self, update: Update, context: CallbackCont
         except:
             pass
 
-async def handle_close_details(self, update: Update, context: CallbackContext):
+async def handle_close_details(update: Update, context: CallbackContext):
     """Обработчик закрытия деталей клиента"""
     query = update.callback_query
     
@@ -242,7 +270,7 @@ async def handle_close_details(self, update: Update, context: CallbackContext):
         try:
             await query.delete_message()
         except Exception as e:
-            self.logger.warning(f"Не удалось удалить детали: {e}")
+            logger.warning(f"Не удалось удалить детали: {e}")
             # Пытаемся редактировать сообщение
             try:
                 await query.edit_message_text(
@@ -250,7 +278,7 @@ async def handle_close_details(self, update: Update, context: CallbackContext):
                     reply_markup=None
                 )
             except Exception as e2:
-                self.logger.warning(f"Не удалось редактировать детали: {e2}")
+                logger.warning(f"Не удалось редактировать детали: {e2}")
                 # Просто выходим если сообщение уже удалено
         
         # Показываем клавиатуру навигации в новом сообщении
@@ -260,7 +288,7 @@ async def handle_close_details(self, update: Update, context: CallbackContext):
         )
         
     except Exception as e:
-        self.logger.error(f"Ошибка закрытия деталей клиента: {e}")
+        logger.error(f"Ошибка закрытия деталей клиента: {e}")
         # Все равно показываем основное меню
         try:
             await query.message.reply_text(
