@@ -38,7 +38,7 @@ async def create_level_handler(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text(
             "📭 Нет активных бонусных программ.\n"
             "Сначала создайте программу лояльности.",
-            reply_markup=await get_bonus_system_keyboard()
+            reply_markup=await get_bonus_system_keyboard(user_id)
         )
         return ConversationHandler.END
     
