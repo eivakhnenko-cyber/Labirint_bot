@@ -77,6 +77,19 @@ class BonusDataManager:
             with sqlite_connection() as conn:
                 cursor = conn.cursor()
                 
+                 
+                # Нужно получить внутренний user_id из таблицы users по telegram_id
+                cursor.execute('''
+                    SELECT user_id FROM users WHERE telegram_id = ?
+                ''', (created_by,))
+                
+                user_result = cursor.fetchone()
+                if not user_result:
+                    self.logger.error(f"Пользователь с telegram_id {created_by} не найден")
+                    return None
+                
+                internal_user_id = user_result['user_id']
+
                 cursor.execute('''
                     INSERT INTO bonus_programs (
                         program_name, description, base_percent, 
@@ -87,7 +100,7 @@ class BonusDataManager:
                     program_data['description'],
                     program_data['base_percent'],
                     program_data['min_amount'],
-                    created_by,
+                    internal_user_id,
                     1  # Активна по умолчанию
                 ))
                 
