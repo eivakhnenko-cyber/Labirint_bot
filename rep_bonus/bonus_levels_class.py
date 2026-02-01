@@ -9,7 +9,6 @@ class BunusLevelsManager:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
     
-    @staticmethod
     def create_bonus_level(self, program_id: int, level_name: str, min_total_purchases: float, 
                       bonus_percent: float, description: str = None):
         """Создание нового уровня в бонусной программе"""
@@ -28,7 +27,6 @@ class BunusLevelsManager:
             self.logger.error(f"Ошибка создания уровня: {e}")
             return None
 
-    @staticmethod
     def get_bonus_levels(self, program_id: int = None):
         """Получение списка уровней"""
         try:
@@ -54,7 +52,6 @@ class BunusLevelsManager:
             self.logger.error(f"Ошибка получения уровней: {e}")
             return []
 
-    @staticmethod
     def get_bonus_level(self, level_id: int):
         """Получение уровня по ID"""
         try:
@@ -71,7 +68,6 @@ class BunusLevelsManager:
             self.logger.error(f"Ошибка получения уровня: {e}")
             return None
 
-    @staticmethod
     def update_bonus_level(self,level_id: int, **kwargs):
         """Обновление уровня"""
         try:
