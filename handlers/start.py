@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from handlers.admin_roles_class import role_manager, UserRole
 from keyboards.global_keyb import get_main_keyboard
+from .privacy_policy import privacy_manager
 from pathlib import Path
 from bot_comands import set_user_commands
 
@@ -45,7 +46,31 @@ async def start(update: Update, context: CallbackContext) -> None:
                 f"📅 *Дата:* {datetime.now().strftime('%d.%m.%Y')}\n\n"
                 f"На текущий момент вы не зарегистрированы, вы можете обратиться к сотрудникам нашей компании."
             )
-            welcome_text = guest_text
+            # Для гостей добавляем предложение ознакомиться с политикой
+            welcome_text = guest_text + "\n\nДля регистрации необходимо ознакомиться с политикой конфиденциальности."
+            
+            message_sent = False
+            if logo_path and logo_path.exists():
+                try:
+                    with open(logo_path, 'rb') as photo:
+                        await update.message.reply_photo(
+                            photo=photo,
+                            caption=welcome_text,
+                            parse_mode='Markdown',
+                            reply_markup=privacy_manager.get_policy_keyboard()
+                        )
+                    message_sent = True
+                except Exception as e:
+                    logger.error(f"Ошибка отправки логотипа: {e}")
+            
+            if not message_sent:
+                await update.message.reply_text(
+                    welcome_text,
+                    parse_mode='Markdown',
+                    reply_markup=privacy_manager.get_policy_keyboard()
+                )
+            return  # Прерываем дальнейшую обработку для гостей
+        
         elif role == UserRole.VISITOR: 
             guest_text = (
                 f"🏰 *Добро пожаловать в Labirint Coffee!* ☕\n\n"

@@ -21,7 +21,12 @@ from handlers.admin import (
 from handlers.admin_roles import (
     create_role_command, edit_role_command, set_user_role_command, show_all_roles
 )
-
+from handlers.customer_self_register import(
+    customer_self_register
+)
+from handlers.privacy_policy import(
+    privacy_manager
+)
 from rep_customer.customers import (
     list_all_customers, show_my_stat,
     show_customer_details, show_my_bonuses
@@ -216,6 +221,7 @@ def main():
         'delete_level_handler': delete_level_handler,
 
          # ========== КЛИЕНТЫ ==========
+        'start_self_registration': customer_self_register.start_self_registration,
         'register_customer_handler': register_customer_handler,
         'search_customer_menu': search_customer_menu,
         'add_purchase_handler': add_purchase_handler,
@@ -284,6 +290,7 @@ def main():
     message_handler = create_message_handler(handlers_registry)
     
     application.add_handler(edit_user_conversation_handler)
+    application.add_handler(CallbackQueryHandler(privacy_manager.handle_privacy_callback, pattern="^(show_privacy_policy|agree_privacy_policy|decline_privacy_policy|send_phone_number|phone)$"))
     application.add_handler(CallbackQueryHandler(report_manager.handle_callback, pattern=f"^(report_|main_menu)"))
     application.add_handler(CallbackQueryHandler(hand_cust_manager.handle_customer_callback, pattern=f"^({VIEW_CUSTOMER_PREFIX}|{CLOSE_CUSTOMER_LIST}|{BACK_TO_LIST}|{CLOSE_DETAILS})"))
     application.add_handler(CallbackQueryHandler(handle_delete_level_callback, pattern=f"^({DELETE_LEVEL_CALLBACK_PREFIX}|{CONFIRM_DELETE_CALLBACK_PREFIX}|{CANCEL_DELETE_CALLBACK})"))
@@ -304,6 +311,7 @@ def main():
 
     
     # Регистрация основного обработчика сообщений
+    application.add_handler(MessageHandler(filters.CONTACT, customer_self_register.process_phone_input))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     application.add_error_handler(error_handler)
     

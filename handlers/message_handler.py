@@ -24,6 +24,9 @@ from handlers.admin_edit_user_flow import (
 from handlers.handlers_customer import (
     hand_cust_manager
 )
+from .customer_self_register import(
+    customer_self_register
+)
 from rep_customer.customers import (
     show_my_bonuses, check_customer_status
 )
@@ -55,6 +58,7 @@ from rep_catalog.catalog_process import (
 from rep_report.report_watch import report_manager
 
 from handlers.callback_handler import handle_callback_query
+from handlers.phone_sharing import request_phone_number
 
 from config.buttons import Buttons
 
@@ -104,12 +108,31 @@ class MessageHandler:
         """Проверить активные процессы"""
         user_data = context.user_data
         
+        # Проверяем состояние ожидания телефона
+        if user_data.get('awaiting_phone') or user_data.get('step') == 'phone':
+            # Проверяем, отправлен ли контакт
+            if update.message and update.message.contact:
+                # Обрабатываем контакт
+                return await customer_self_register.process_phone_input(update, context)
+            # Проверяем, отправлен ли текст с номером
+            elif update.message and update.message.text:
+                # Проверяем, не является ли текст командой отмены
+                if text == "❌ Отмена":
+                    context.user_data.clear()
+                    await update.message.reply_text("Регистрация отменена.")
+                    return True
+                # Обрабатываем текстовый номер
+                return await customer_self_register.process_phone_input(update, context)
+
         if 'edit_user_state' in user_data:
         # Если у нас активен процесс редактирования пользователя
             return await self._handle_edit_user_process(update, context, text)
         # Список активных процессов и их обработчиков
         processes = [
             # Процессы работы с клиентами
+            ('self_registering', customer_self_register.start_self_registration),
+            ('send_phone_number', request_phone_number),
+            ('awaiting_phone', customer_self_register.process_phone_input),
             ('registering_customer', process_customer_registration),
             ('awaiting_generate_card', customer_register.generate_card_number),
             ('check_customer_status', check_customer_status),
@@ -253,6 +276,7 @@ class MessageHandler:
         
         return False
     
+    @staticmethod
     def cleanup_context(context):
         """Статический метод для очистки контекста"""
         keys_to_remove = ['all_customers_list', 'search_results', 'searching_customer']
@@ -261,7 +285,7 @@ class MessageHandler:
 
     async def _cleanup_context(self, context: ContextTypes.DEFAULT_TYPE):
         """Алиас для обратной совместимости"""
-        self.cleanup_context(context)
+        self.__class__.cleanup_context(context)
     
     async def _show_main_menu(self, user_id: int):
         """Показать главное меню"""
